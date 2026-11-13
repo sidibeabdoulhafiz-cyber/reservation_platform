@@ -17,6 +17,12 @@ return [
     'default' => env('MAIL_MAILER', 'log'),
 
     /*
+    | CotaTrans : envoyer les e-mails via la file d'attente (php artisan queue:work)
+    | plutôt que pendant la requête. Laisser à false si aucun worker ne tourne.
+    */
+    'en_file' => (bool) env('MAIL_EN_FILE', false),
+
+    /*
     |--------------------------------------------------------------------------
     | Mailer Configurations
     |--------------------------------------------------------------------------
@@ -68,6 +74,12 @@ return [
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
+        ],
+
+        // Brevo par API (recommandé) : MAIL_MAILER=brevo + BREVO_API_KEY.
+        'brevo' => [
+            'transport' => 'brevo',
+            'key' => env('BREVO_API_KEY'),
         ],
 
         'log' => [

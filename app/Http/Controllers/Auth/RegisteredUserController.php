@@ -30,8 +30,11 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $request->merge(['tel' => preg_replace('/[^\d+]/', '', (string) $request->input('tel'))]);
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'tel' => ['required', 'string', 'regex:/^\+?\d{8,15}$/'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
@@ -39,6 +42,9 @@ class RegisteredUserController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'tel' => $request->tel,
+            'role' => 'client',
+            'actif' => true,
             'password' => Hash::make($request->password),
         ]);
 

@@ -10,7 +10,7 @@ class DepartZone extends Model
     protected $table = 'depart_zone';
 
     protected $fillable = [
-        'depart_id', 'zone_id', 'prix', 'point_rdv', 'heure_ramassage', 'actif',
+        'depart_id', 'zone_id', 'ordre', 'principal', 'prix', 'point_rdv', 'heure_ramassage', 'actif',
     ];
 
     protected function casts(): array
@@ -18,6 +18,8 @@ class DepartZone extends Model
         return [
             'prix' => 'integer',
             'actif' => 'boolean',
+            'principal' => 'boolean',
+            'ordre' => 'integer',
         ];
     }
 
@@ -29,5 +31,15 @@ class DepartZone extends Model
     public function zone(): BelongsTo
     {
         return $this->belongsTo(Zone::class);
+    }
+
+    /** Heure de passage au format 18h30. */
+    public function heure(): ?string
+    {
+        if (! $this->heure_ramassage) {
+            return null;
+        }
+
+        return str_replace(':', 'h', substr((string) $this->heure_ramassage, 0, 5));
     }
 }

@@ -10,12 +10,20 @@ use Illuminate\Support\Facades\DB;
 
 class CancelReservation
 {
-    public function handle(Reservation $reservation, User $admin): Reservation
+    /**
+     * L'admin peut tout annuler ; le client peut annuler sa propre réservation tant qu'elle est « à payer ».
+     */
+    public function handle(Reservation $reservation, User $acteur): Reservation
     {
-        abort_unless($admin->estAdmin(), 403);
+        $estClient = ! $acteur->estAdmin();
+        abort_if($estClient && $reservation->user_id !== $acteur->id, 403);
 
-        return DB::transaction(function () use ($reservation) {
+        return DB::transaction(function () use ($reservation, $estClient) {
             $locked = Reservation::whereKey($reservation->getKey())->lockForUpdate()->firstOrFail();
+
+            if ($estClient && $locked->statut !== ReservationStatus::APayer) {
+                abort(403, 'Cette réservation ne peut plus être annulée.');
+            }
 
             if ($locked->statut === ReservationStatus::Annulee || $locked->statut === ReservationStatus::Expiree) {
                 return $locked;

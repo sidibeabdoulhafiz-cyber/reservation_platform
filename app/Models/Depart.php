@@ -37,7 +37,7 @@ class Depart extends Model
 
     public function tarifs(): HasMany
     {
-        return $this->hasMany(DepartZone::class);
+        return $this->hasMany(DepartZone::class)->orderBy('ordre')->orderBy('heure_ramassage')->orderBy('id');
     }
 
     public function reservations(): HasMany

@@ -3,30 +3,29 @@
 namespace App\Livewire\Reservations;
 
 use App\Actions\Reservations\CreateReservation;
-use App\Actions\Reservations\SubmitPaymentProof;
-use App\Enums\ReservationStatus;
+use App\Enums\UserRole;
 use App\Models\Evenement;
-use App\Models\Reservation;
 use App\Models\Setting;
-use App\Support\Wave;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Models\User;
+use App\Support\Notifier;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
-use Livewire\Attributes\Title;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 
 #[Layout('components.layouts.site')]
-#[Title('Réserver')]
 class Create extends Component
 {
-    use AuthorizesRequests, WithFileUploads;
+    public Evenement $evenement;
 
     public string $canal = 'transport';
-
-    public int|string $evenement_id = 0;
 
     public int|string $depart_id = 0;
 
@@ -36,23 +35,25 @@ class Create extends Component
 
     public int $quantite = 1;
 
-    public ?int $reservationId = null;
+    /** Identification du passager non connecté : « inscription » ou « connexion ». */
+    public string $mode = 'inscription';
 
-    public string $transaction_id = '';
+    public string $nom = '';
 
-    public int|string $montant_declare = '';
+    public string $tel = '';
 
-    public $capture = null;
+    public string $email = '';
 
-    public int $uploadProgress = 0;
+    public string $password = '';
 
-    public function mount(): void
+    public function mount(Evenement $evenement): void
     {
-        $draft = session('reservation_draft');
+        abort_unless($evenement->statut === 'publie', 404);
+        $this->evenement = $evenement;
 
-        if (is_array($draft)) {
+        $draft = session('reservation_draft');
+        if (is_array($draft) && (int) ($draft['evenement_id'] ?? 0) === $evenement->id) {
             $this->canal = $draft['type'] ?? 'transport';
-            $this->evenement_id = $draft['evenement_id'] ?? 0;
             $this->depart_id = $draft['depart_id'] ?? 0;
             $this->zone_id = $draft['zone_id'] ?? 0;
             $this->type_billet_id = $draft['type_billet_id'] ?? 0;
@@ -60,35 +61,10 @@ class Create extends Component
         }
 
         $this->assurerSelection();
-
-        if (Auth::check()) {
-            $ouverte = Auth::user()->reservations()
-                ->whereIn('statut', [
-                    ReservationStatus::APayer->value,
-                    ReservationStatus::EnVerification->value,
-                ])
-                ->latest('id')
-                ->first();
-
-            $this->reservationId = $ouverte?->id;
-
-            if (is_array($draft) && Auth::check() && ! $this->reservationId) {
-                session()->forget('reservation_draft');
-            }
-        }
     }
 
     public function updatedCanal(): void
     {
-        $this->quantite = 1;
-        $this->assurerSelection();
-    }
-
-    public function updatedEvenementId(): void
-    {
-        $this->depart_id = 0;
-        $this->zone_id = 0;
-        $this->type_billet_id = 0;
         $this->quantite = 1;
         $this->assurerSelection();
     }
@@ -99,38 +75,22 @@ class Create extends Component
         $this->assurerSelection();
     }
 
-    #[Computed]
-    public function evenements(): Collection
+    public function updatedTypeBilletId(): void
     {
-        return Evenement::publies()
-            ->with([
-                'departs' => fn ($q) => $q->ouverts()->orderBy('depart_at')->with([
-                    'vehicule',
-                    'tarifs' => fn ($t) => $t->where('actif', true)->orderBy('id')->with('zone'),
-                ]),
-                'typesBillets' => fn ($q) => $q->where('actif', true)->orderBy('ordre')->orderBy('id'),
-            ])
-            ->orderBy('debut_at')
-            ->get()
-            ->filter(function (Evenement $e) {
-                $transports = $e->departs->filter(fn ($d) => $d->tarifs->isNotEmpty());
-                $billets = $e->typesBillets->filter(fn ($t) => $t->enVente());
-
-                return $transports->isNotEmpty() || $billets->isNotEmpty();
-            })
-            ->values();
-    }
-
-    #[Computed]
-    public function evenement(): ?Evenement
-    {
-        return $this->evenements->firstWhere('id', (int) $this->evenement_id);
+        $this->assurerSelection();
     }
 
     #[Computed]
     public function departs(): Collection
     {
-        return $this->evenement?->departs->filter(fn ($d) => $d->tarifs->isNotEmpty())->values() ?? collect();
+        return $this->evenement->departs()
+            ->ouverts()
+            ->where('depart_at', '>', now())
+            ->orderBy('depart_at')
+            ->with(['vehicule', 'tarifs' => fn ($t) => $t->where('actif', true)->with('zone')])
+            ->get()
+            ->filter(fn ($d) => $d->tarifs->isNotEmpty())
+            ->values();
     }
 
     #[Computed]
@@ -154,7 +114,12 @@ class Create extends Component
     #[Computed]
     public function typesBillets(): Collection
     {
-        return $this->evenement?->typesBillets->filter(fn ($t) => $t->enVente())->values() ?? collect();
+        return $this->evenement->typesBillets()
+            ->where('actif', true)
+            ->orderBy('ordre')->orderBy('id')
+            ->get()
+            ->filter(fn ($t) => $t->enVente())
+            ->values();
     }
 
     #[Computed]
@@ -166,31 +131,31 @@ class Create extends Component
     #[Computed]
     public function prixUnitaire(): int
     {
-        if ($this->canal === 'transport') {
-            return (int) ($this->tarif?->prix ?? 0);
-        }
-
-        return (int) ($this->typeBillet?->prix ?? 0);
+        return $this->canal === 'transport'
+            ? (int) ($this->tarif?->prix ?? 0)
+            : (int) ($this->typeBillet?->prix ?? 0);
     }
 
     #[Computed]
     public function maxParCommande(): int
     {
-        if ($this->canal === 'transport') {
-            return (int) ($this->depart?->max_par_commande ?? 8);
-        }
-
-        return (int) ($this->typeBillet?->max_par_commande ?? 2);
+        return $this->canal === 'transport'
+            ? (int) ($this->depart?->max_par_commande ?? 8)
+            : (int) ($this->typeBillet?->max_par_commande ?? 2);
     }
 
     #[Computed]
     public function restant(): int
     {
-        if ($this->canal === 'transport') {
-            return (int) ($this->depart?->placesRestantes() ?? 0);
-        }
+        return $this->canal === 'transport'
+            ? (int) ($this->depart?->placesRestantes() ?? 0)
+            : (int) ($this->typeBillet?->placesRestantes() ?? 0);
+    }
 
-        return (int) ($this->typeBillet?->placesRestantes() ?? 0);
+    #[Computed]
+    public function maxPossible(): int
+    {
+        return max(0, min($this->maxParCommande, $this->restant));
     }
 
     #[Computed]
@@ -199,40 +164,9 @@ class Create extends Component
         return (string) Setting::get('site_ouvert', '1') === '1';
     }
 
-    #[Computed]
-    public function reservation(): ?Reservation
-    {
-        if (! $this->reservationId || ! Auth::check()) {
-            return null;
-        }
-
-        return Reservation::query()
-            ->with([
-                'zone',
-                'depart.evenement',
-                'typeBillet.evenement',
-                'billets',
-                'paiements' => fn ($q) => $q->latest('id'),
-            ])
-            ->where('user_id', Auth::id())
-            ->find($this->reservationId);
-    }
-
-    #[Computed]
-    public function etape(): string
-    {
-        return match ($this->reservation?->statut) {
-            ReservationStatus::APayer => 'payer',
-            ReservationStatus::EnVerification => 'attendre',
-            ReservationStatus::Payee => 'billets',
-            default => 'choisir',
-        };
-    }
-
     public function increment(): void
     {
-        $max = min($this->maxParCommande, max(1, $this->restant));
-        if ($this->quantite < $max) {
+        if ($this->quantite < $this->maxPossible) {
             $this->quantite++;
         }
     }
@@ -248,7 +182,7 @@ class Create extends Component
     {
         $choix = [
             'type' => $this->canal,
-            'evenement_id' => (int) $this->evenement_id,
+            'evenement_id' => $this->evenement->id,
             'depart_id' => (int) $this->depart_id,
             'zone_id' => (int) $this->zone_id,
             'type_billet_id' => (int) $this->type_billet_id,
@@ -257,111 +191,119 @@ class Create extends Component
 
         if (! Auth::check()) {
             session(['reservation_draft' => $choix]);
-
-            return redirect()->guest(route('login'));
+            $this->identifier();
         }
 
         $reservation = $create->handle(Auth::user(), $choix);
         session()->forget('reservation_draft');
 
-        $this->reservationId = $reservation->id;
-        $this->montant_declare = (string) $reservation->montant;
-        $this->reset('transaction_id', 'capture');
-        $this->resetValidation();
-        unset($this->reservation);
+        Notifier::reservationCreee($reservation);
 
-        $this->js("document.getElementById('commande')?.scrollIntoView({ block: 'start' })");
+        return $this->redirectRoute('reservations.show', $reservation);
     }
 
-    public function nouvelle(): void
+    /** Crée le compte ou connecte le passager sans quitter la page. */
+    private function identifier(): void
     {
-        $this->reservationId = null;
-        $this->reset('transaction_id', 'capture', 'montant_declare');
-        $this->resetValidation();
-        unset($this->reservation);
-    }
+        if ($this->mode === 'connexion') {
+            $this->validate([
+                'email' => ['required', 'email'],
+                'password' => ['required', 'string'],
+            ], [
+                'email.required' => 'Saisissez votre adresse e-mail.',
+                'password.required' => 'Saisissez votre mot de passe.',
+            ]);
 
-    public function submitProof(SubmitPaymentProof $submit): void
-    {
-        $reservation = $this->reservation;
-        abort_unless($reservation, 404);
-        $this->authorize('submitProof', $reservation);
+            $cle = 'login:'.Str::lower($this->email).'|'.request()->ip();
+            if (RateLimiter::tooManyAttempts($cle, 5)) {
+                throw ValidationException::withMessages([
+                    'email' => 'Trop de tentatives. Réessayez dans '.RateLimiter::availableIn($cle).' secondes.',
+                ]);
+            }
 
-        $this->transaction_id = strtoupper(trim($this->transaction_id));
+            if (! Auth::attempt(['email' => Str::lower($this->email), 'password' => $this->password, 'actif' => true], true)) {
+                RateLimiter::hit($cle);
+                throw ValidationException::withMessages([
+                    'email' => 'E-mail ou mot de passe incorrect.',
+                ]);
+            }
 
-        $data = $this->validate([
-            'montant_declare' => ['required', 'integer', 'min:1'],
-            'transaction_id' => ['required', 'string', 'min:6', 'max:40'],
-            'capture' => ['required', 'image', 'max:4096'],
+            RateLimiter::clear($cle);
+            session()->regenerate();
+            $this->password = '';
+
+            return;
+        }
+
+        $this->tel = preg_replace('/[^\d+]/', '', $this->tel) ?? '';
+        $this->email = Str::lower(trim($this->email));
+
+        $this->validate([
+            'nom' => ['required', 'string', 'max:120'],
+            'tel' => ['required', 'string', 'regex:/^\+?\d{8,15}$/'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', Password::defaults()],
         ], [
-            'montant_declare.required' => 'Saisissez le montant lu sur le reçu.',
-            'montant_declare.integer' => 'Le montant doit être un nombre entier en FCFA.',
-            'transaction_id.required' => 'Saisissez l\'identifiant de transaction Wave.',
-            'capture.required' => 'Ajoutez la capture d\'écran du reçu.',
-            'capture.image' => 'Le fichier doit être une image.',
-            'capture.max' => 'L\'image ne doit pas dépasser 4 Mo.',
+            'nom.required' => 'Indiquez votre nom complet.',
+            'tel.required' => 'Indiquez votre numéro WhatsApp / mobile.',
+            'tel.regex' => 'Numéro invalide. Exemple : 0700000000 ou +2250700000000.',
+            'email.required' => 'Indiquez votre e-mail pour recevoir vos billets.',
+            'email.email' => 'Adresse e-mail invalide.',
+            'email.unique' => 'Un compte existe déjà avec cet e-mail. Choisissez « J’ai déjà un compte ».',
+            'password.required' => 'Choisissez un mot de passe.',
+        ], [
+            'password' => 'mot de passe',
         ]);
 
-        $submit->handle($reservation, (int) $data['montant_declare'], $data['transaction_id'], $data['capture']);
+        $user = User::create([
+            'name' => $this->nom,
+            'tel' => $this->tel,
+            'email' => $this->email,
+            'password' => Hash::make($this->password),
+            'role' => UserRole::Client->value,
+            'actif' => true,
+        ]);
 
-        $this->reset('capture');
-        unset($this->reservation);
-    }
-
-    public function lienWave(): ?string
-    {
-        $montant = $this->reservation?->montant;
-
-        return Wave::lien($montant);
+        event(new Registered($user));
+        Auth::login($user, true);
+        session()->regenerate();
+        $this->password = '';
     }
 
     public function render()
     {
-        return view('livewire.reservations.create');
+        return view('livewire.reservations.create')
+            ->title($this->evenement->titre);
     }
 
     private function assurerSelection(): void
     {
-        if ($this->evenements->isEmpty()) {
-            return;
-        }
+        unset($this->depart, $this->tarifs, $this->tarif, $this->typeBillet);
 
-        if (! $this->evenement) {
-            $this->evenement_id = $this->evenements->first()->id;
-            unset($this->evenement, $this->departs, $this->typesBillets);
+        if ($this->canal === 'transport' && $this->departs->isEmpty() && $this->typesBillets->isNotEmpty()) {
+            $this->canal = 'billet';
+        } elseif ($this->canal === 'billet' && $this->typesBillets->isEmpty() && $this->departs->isNotEmpty()) {
+            $this->canal = 'transport';
         }
 
         if ($this->canal === 'transport') {
-            if ($this->departs->isEmpty() && $this->typesBillets->isNotEmpty()) {
-                $this->canal = 'billet';
-                unset($this->typesBillets);
-
-                return;
-            }
-
             if (! $this->depart && $this->departs->isNotEmpty()) {
-                $this->depart_id = $this->departs->first()->id;
-                unset($this->depart, $this->tarifs);
+                $premier = $this->departs->first(fn ($d) => $d->placesRestantes() > 0) ?? $this->departs->first();
+                $this->depart_id = $premier->id;
+                unset($this->depart, $this->tarifs, $this->tarif);
             }
 
             if (! $this->tarif && $this->tarifs->isNotEmpty()) {
-                $this->zone_id = $this->tarifs->first()->zone_id;
+                $principal = $this->tarifs->firstWhere('principal', true) ?? $this->tarifs->first();
+                $this->zone_id = $principal->zone_id;
+                unset($this->tarif);
             }
-        } else {
-            if ($this->typesBillets->isEmpty() && $this->departs->isNotEmpty()) {
-                $this->canal = 'transport';
-
-                return;
-            }
-
-            if (! $this->typeBillet && $this->typesBillets->isNotEmpty()) {
-                $this->type_billet_id = $this->typesBillets->first()->id;
-            }
+        } elseif (! $this->typeBillet && $this->typesBillets->isNotEmpty()) {
+            $this->type_billet_id = $this->typesBillets->first()->id;
+            unset($this->typeBillet);
         }
 
-        $max = max(1, min($this->maxParCommande, max(1, $this->restant)));
-        if ($this->quantite > $max) {
-            $this->quantite = $max;
-        }
+        unset($this->prixUnitaire, $this->maxParCommande, $this->restant, $this->maxPossible);
+        $this->quantite = max(1, min($this->quantite, max(1, $this->maxPossible)));
     }
 }

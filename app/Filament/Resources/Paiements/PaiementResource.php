@@ -7,6 +7,7 @@ use App\Actions\Reservations\ValidatePayment;
 use App\Enums\PaiementStatus;
 use App\Filament\Resources\Paiements\Pages\ManagePaiements;
 use App\Models\Paiement;
+use App\Support\Notifier;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
@@ -96,7 +97,7 @@ class PaiementResource extends Resource
                                     ->required(),
                             ])
                             ->action(function (array $data, Paiement $record) {
-                                app(ValidatePayment::class)->handle($record, auth()->user(), (int) $data['places']);
+                                Notifier::billetsConfirmes(app(ValidatePayment::class)->handle($record, auth()->user(), (int) $data['places']));
                                 Notification::make()->title('Paiement validé pour '.$data['places'].' place(s)')->success()->send();
                             })
                             ->cancelParentActions(),
@@ -110,13 +111,13 @@ class PaiementResource extends Resource
                                     ->maxLength(200),
                             ])
                             ->action(function (array $data, Paiement $record) {
-                                app(RefusePayment::class)->handle($record, auth()->user(), $data['motif']);
+                                Notifier::paiementRefuse(app(RefusePayment::class)->handle($record, auth()->user(), $data['motif']), $data['motif']);
                                 Notification::make()->title('Paiement refusé, le client peut renvoyer un reçu')->warning()->send();
                             })
                             ->cancelParentActions(),
                     ])
                     ->action(function (Paiement $record) {
-                        app(ValidatePayment::class)->handle($record, auth()->user());
+                        Notifier::billetsConfirmes(app(ValidatePayment::class)->handle($record, auth()->user()));
                         Notification::make()->title('Paiement validé')->success()->send();
                     }),
             ]);

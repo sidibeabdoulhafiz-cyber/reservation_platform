@@ -14,6 +14,12 @@
         <x-input-error :messages="$errors->get('name')" class="err" />
 
         <label>
+            Téléphone (WhatsApp)
+            <input id="tel" type="tel" name="tel" value="{{ old('tel') }}" required inputmode="tel" autocomplete="tel" placeholder="07 00 00 00 00">
+        </label>
+        <x-input-error :messages="$errors->get('tel')" class="err" />
+
+        <label>
             Adresse e-mail
             <input id="email" type="email" name="email" value="{{ old('email') }}" required autocomplete="username">
         </label>

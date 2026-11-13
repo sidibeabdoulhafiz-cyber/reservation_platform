@@ -1,58 +1,60 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# CotaTrans
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Plateforme de réservation de transport aller-retour pour les événements (concerts, festivals, matchs…).
+Laravel 13 · Livewire 4 · Filament 5 (console admin).
 
-## About Laravel
-
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
-
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Installation locale
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate --seed
+php artisan storage:link        # indispensable pour afficher les affiches des événements
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Comptes de démonstration (mot de passe `password`) :
+`admin@cotatrans.test` · `client@cotatrans.test` · `controle@cotatrans.test`
 
-## Contributing
+Planificateur (expiration des réservations non payées) : `php artisan schedule:work` en local, ou une tâche cron `* * * * * php artisan schedule:run` en production.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Parcours passager
 
-## Code of Conduct
+1. **Accueil** (`/`) : cartes des événements avec affiche, date, lieu et prix « à partir de ».
+2. **Page événement** (`/evenements/{slug}`) : lien à partager par le promoteur. Le passager choisit le départ, son **arrêt sur l’itinéraire** (heure de passage, point de RDV), le nombre de places, et crée son compte **sur la même page**.
+3. **Suivi** (`/reservations/{ref}`) : paiement Wave, envoi de la capture du reçu (avec aperçu et compression), compte à rebours du délai de paiement.
+4. **Billets** : un QR code par place, page imprimable / PDF, lien facultatif vers le groupe WhatsApp de l’événement.
+5. **Mes billets** (`/mes-billets`) : réservations à finaliser, à venir, historique.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Console admin (`/admin`)
 
-## Security Vulnerabilities
+- **Événements** : affiche (recadrage 16:9 intégré), accroche, lien du groupe WhatsApp, bouton « Voir la page ».
+- **Départs** : itinéraire avec arrêts **ordonnés par glisser-déposer**, point principal, heure de passage estimée, prix par arrêt.
+- **Paiements** : validation ou refus des reçus. Le passager est prévenu par e-mail.
+- **Réglages** : lien Wave, délai de paiement, bouton **« Envoyer un e-mail de test »**.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## E-mails (Brevo)
 
-## License
+E-mails envoyés automatiquement : réservation créée (à payer), reçu bien reçu, billets confirmés (QR codes en pièces jointes) et reçu refusé (avec le motif).
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Configuration dans `.env` :
+
+```dotenv
+MAIL_MAILER=brevo
+BREVO_API_KEY=xkeysib-...           # https://app.brevo.com/settings/keys/api
+MAIL_FROM_ADDRESS="billets@votre-domaine.ci"   # expéditeur validé dans Brevo
+MAIL_FROM_NAME="CotaTrans"
+```
+
+Le connecteur Brevo (`app/Mail/Transport/BrevoTransport.php`) appelle directement l’API transactionnelle,
+sans dépendance supplémentaire. Alternative : le relais SMTP Brevo (voir `.env.example`).
+
+Pour envoyer les e-mails en arrière-plan : `MAIL_EN_FILE=true` puis `php artisan queue:work`.
+
+## Tests
+
+```bash
+php artisan test
+```

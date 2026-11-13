@@ -32,7 +32,7 @@
     @if (! app()->environment('production'))
         <p class="hint" style="margin-top:16px">
             Local, sans HTTPS — mot de passe <span class="mono">password</span><br>
-            Client : client@vehicule.test · Admin : admin@vehicule.test · Contrôle : controle@vehicule.test
+            Client : client@cotatrans.test · Admin : admin@cotatrans.test · Contrôle : controle@cotatrans.test
         </p>
     @endif
 

@@ -1,75 +1,55 @@
-<div id="mes-reservations" class="mine" @if ($reservations->contains(fn ($r) => $r->statut->value === 'en_verification')) wire:poll.15s @endif>
-    @if ($reservations->isNotEmpty())
-        <h2>Mes réservations</h2>
+<div class="narrow mesbillets">
+    <header class="hero">
+        <h1>Mes billets</h1>
+        <p>Tes réservations et tes QR codes, au même endroit.</p>
+    </header>
 
-        @if ($notice)
-            <div class="alert alert-ok" role="status">{{ $notice }}</div>
-        @endif
+    @php [$aFinaliser, $aVenir, $passees] = $this->groupes; @endphp
 
-        @foreach ($reservations as $r)
-            <article class="rcard {{ $highlight === $r->id ? 'new' : '' }}" wire:key="res-{{ $r->id }}">
-                <div class="rhead">
-                    <div>
-                        <div class="mono">{{ $r->ref }}</div>
-                        <div class="hint">{{ $r->created_at->format('d/m/Y à H:i') }}</div>
-                    </div>
-                    <span class="badge {{ $r->statut->value }}">{{ $r->statut->getLabel() }}</span>
-                </div>
-
-                <div class="rbody">
-                    <div><span class="k">Zone</span>{{ $r->zone->nom }}</div>
-                    <div><span class="k">Places</span>{{ $r->places }}</div>
-                    <div><span class="k">Total</span><span class="mono">{{ number_format($r->montant, 0, ',', ' ') }} FCFA</span></div>
-                </div>
-
-                @if ($r->statut->value === 'en_attente')
-                    <div class="steps">
-                        @if ($r->motif_refus)
-                            <div class="alert alert-err">Reçu refusé : {{ $r->motif_refus }}. Renvoyez un reçu valide.</div>
-                        @endif
-                        @if ($proofFor === $r->id)
-                            <p>1. Payez <b>{{ number_format($r->montant, 0, ',', ' ') }} FCFA</b> sur Wave. 2. Revenez ici et envoyez la capture.</p>
-                            <div class="actions">
-                                @if ($this->waveLink)
-                                    <a class="btn" href="{{ $this->waveLink }}" target="_blank" rel="noopener">Payer sur Wave</a>
-                                @endif
-                            </div>
-
-                            <form class="proof" wire:submit="submitProof">
-                                <label class="drop">
-                                    <input type="file" wire:model="capture" accept="image/*">
-                                    @if ($capture && $capture->isPreviewable())
-                                        <img class="thumb" src="{{ $capture->temporaryUrl() }}" alt="Aperçu du reçu">
-                                    @else
-                                        <span wire:loading.remove wire:target="capture">Choisir la capture du reçu</span>
-                                    @endif
-                                    <span wire:loading wire:target="capture">Téléversement…</span>
-                                </label>
-                                @error('capture') <span class="err">{{ $message }}</span> @enderror
-
-                                <label>
-                                    Identifiant de transaction Wave
-                                    <input type="text" wire:model="paiement_id" placeholder="T_XXXXXXXX" autocomplete="off" autocapitalize="characters" spellcheck="false">
-                                </label>
-                                @error('paiement_id') <span class="err">{{ $message }}</span> @enderror
-
-                                <button class="btn" type="submit" wire:loading.attr="disabled" wire:target="submitProof,capture">
-                                    <span wire:loading.remove wire:target="submitProof">Envoyer le reçu</span>
-                                    <span wire:loading wire:target="submitProof">Envoi…</span>
-                                </button>
-                            </form>
-                        @else
-                            <div class="actions">
-                                <button type="button" class="btn btn-ghost" wire:click="openProof({{ $r->id }})">Payer / envoyer le reçu</button>
-                            </div>
-                        @endif
-                    </div>
-                @elseif ($r->statut->value === 'en_verification')
-                    <p class="note">Reçu envoyé (transaction {{ $r->paiement_id }}). Cette page se met à jour dès la validation.</p>
-                @elseif ($r->statut->value === 'payee')
-                    <p class="note note-ok">Paiement confirmé · transaction {{ $r->paiement_id }}</p>
-                @endif
-            </article>
-        @endforeach
+    @if ($this->reservations->isEmpty())
+        <div class="panel" style="text-align:center;padding:36px 20px">
+            <h3>Aucune réservation pour l’instant</h3>
+            <p class="hint">Choisis un événement et réserve ta place en car en deux minutes.</p>
+            <a class="btn" href="{{ route('home') }}" style="margin-top:12px">Voir les événements</a>
+        </div>
     @endif
+
+    @foreach ([['À finaliser', $aFinaliser], ['À venir', $aVenir], ['Historique', $passees]] as [$titre, $liste])
+        @if ($liste->isNotEmpty())
+            <h2 class="grp">{{ $titre }}</h2>
+            <div class="list">
+                @foreach ($liste as $r)
+                    @php $evt = $r->depart?->evenement ?? $r->typeBillet?->evenement; @endphp
+                    <a class="row" href="{{ route('reservations.show', $r) }}" wire:key="r-{{ $r->id }}">
+                        @if ($evt)
+                            <x-evenement-cover :evenement="$evt" :badge="false" class="thumb" />
+                        @endif
+                        <div class="txt">
+                            <b>{{ $evt?->titre ?? 'Réservation' }}</b>
+                            <small>
+                                {{ $evt?->debut_at?->locale('fr')->translatedFormat('D j M') }}
+                                · {{ $r->quantite }} {{ $r->type === \App\Enums\ReservationType::Transport ? 'place' : 'billet' }}{{ $r->quantite > 1 ? 's' : '' }}
+                                @if ($r->zone) · {{ $r->zone->nom }} @endif
+                            </small>
+                            <span class="badge {{ $r->statut->value }}">{{ $r->statut === \App\Enums\ReservationStatus::APayer ? 'À payer · continuer' : $r->statut->getLabel() }}</span>
+                        </div>
+                        <span class="chev" aria-hidden="true">›</span>
+                    </a>
+                @endforeach
+            </div>
+        @endif
+    @endforeach
+
+    <style>
+        .grp { font-size: 1.1rem; margin: 22px 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-family: var(--body); font-weight: 700; }
+        .list { display: grid; gap: 10px; }
+        .row { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 10px; text-decoration: none; box-shadow: var(--shadow); transition: border-color .15s; }
+        .row:hover { border-color: var(--accent); }
+        .row .thumb { width: 88px; flex: none; border-radius: 12px; }
+        .row .thumb .fallback { font-size: .7rem; }
+        .row .txt { display: grid; gap: 3px; flex: 1; min-width: 0; justify-items: start; }
+        .row .txt b { font-family: var(--display); font-size: 1.05rem; }
+        .row .txt small { color: var(--muted); }
+        .chev { font-size: 28px; color: var(--muted); padding: 0 6px; }
+    </style>
 </div>

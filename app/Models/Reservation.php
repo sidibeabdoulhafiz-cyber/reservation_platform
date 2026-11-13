@@ -27,6 +27,16 @@ class Reservation extends Model
         ];
     }
 
+    public function getRouteKeyName(): string
+    {
+        return 'ref';
+    }
+
+    public function evenement(): ?Evenement
+    {
+        return $this->depart?->evenement ?? $this->typeBillet?->evenement;
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

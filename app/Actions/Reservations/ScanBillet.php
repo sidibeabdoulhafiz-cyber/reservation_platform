@@ -45,7 +45,7 @@ class ScanBillet
                 return [
                     'statut' => 'utilise',
                     'message' => 'Ce billet a déjà été utilisé'
-                        .($billet->utilise_at ? ' le '.$billet->utilise_at->format('d/m/Y à H:i') : '.')
+                        .($billet->utilise_at ? ' le '.$billet->utilise_at->format('d/m/Y à H:i') : '')
                         .'.',
                     'billet' => $billet,
                 ];

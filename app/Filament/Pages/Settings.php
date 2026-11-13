@@ -5,11 +5,14 @@ namespace App\Filament\Pages;
 use App\Models\Setting;
 use App\Support\Wave;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class Settings extends Page
 {
@@ -26,6 +29,33 @@ class Settings extends Page
     protected string $view = 'filament.pages.settings';
 
     public ?array $data = [];
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('testMail')
+                ->label('Envoyer un e-mail de test')
+                ->icon('heroicon-o-envelope')
+                ->color('gray')
+                ->schema([
+                    TextInput::make('destinataire')->label('Destinataire')->email()->required()
+                        ->default(fn () => auth()->user()?->email),
+                ])
+                ->action(function (array $data) {
+                    try {
+                        Mail::raw(
+                            'Ceci est un e-mail de test CotaTrans. Si vous le lisez, l’envoi ('.config('mail.default').') fonctionne.',
+                            fn ($m) => $m->to($data['destinataire'])->subject('Test CotaTrans · e-mails'),
+                        );
+                        Notification::make()->title('E-mail envoyé via « '.config('mail.default').' »')
+                            ->body(config('mail.default') === 'log' ? 'Mode log : voir storage/logs/laravel.log. Passez MAIL_MAILER=brevo pour un vrai envoi.' : null)
+                            ->success()->send();
+                    } catch (Throwable $e) {
+                        Notification::make()->title('Échec de l’envoi')->body($e->getMessage())->danger()->persistent()->send();
+                    }
+                }),
+        ];
+    }
 
     public function mount(): void
     {

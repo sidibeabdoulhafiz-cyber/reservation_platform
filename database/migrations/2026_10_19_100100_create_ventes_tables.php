@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -26,12 +27,17 @@ return new class extends Migration
             $table->index(['user_id', 'statut']);
             $table->index(['statut', 'created_at']);
             $table->index(['statut', 'expire_at']);
-            $table->check('(
-                (type = \'transport\' AND depart_id IS NOT NULL AND zone_id IS NOT NULL AND type_billet_id IS NULL)
-                OR
-                (type = \'billet\' AND type_billet_id IS NOT NULL AND depart_id IS NULL AND zone_id IS NULL)
-            )');
         });
+
+        // Contrainte d'intégrité (MySQL 8.0.16+ / PostgreSQL). Ignorée sur SQLite.
+        // Blueprint::check() n'existe pas dans Laravel 13 : on passe par du SQL brut.
+        if (in_array(DB::getDriverName(), ['mysql', 'mariadb', 'pgsql'], true)) {
+            DB::statement("ALTER TABLE reservations ADD CONSTRAINT reservations_type_check CHECK (
+                (type = 'transport' AND depart_id IS NOT NULL AND zone_id IS NOT NULL AND type_billet_id IS NULL)
+                OR
+                (type = 'billet' AND type_billet_id IS NOT NULL AND depart_id IS NULL AND zone_id IS NULL)
+            )");
+        }
 
         Schema::create('paiements', function (Blueprint $table) {
             $table->id();

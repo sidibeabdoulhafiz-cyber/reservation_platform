@@ -69,10 +69,18 @@ class DepartResource extends Resource
             ])->default('ouvert')->required(),
             Repeater::make('tarifs')
                 ->relationship()
-                ->label('Zones desservies')
+                ->label('Itinéraire : arrêts dans l’ordre de passage')
+                ->helperText('Glissez les arrêts pour les ordonner. Cochez « Point principal » pour le rassemblement principal.')
+                ->orderColumn('ordre')
+                ->reorderableWithButtons()
+                ->collapsible()
+                ->itemLabel(fn (array $state): ?string => ($state['principal'] ?? false ? '★ ' : '')
+                    .(Zone::find($state['zone_id'] ?? null)?->nom ?? 'Nouvel arrêt')
+                    .(! empty($state['heure_ramassage']) ? ' · '.substr((string) $state['heure_ramassage'], 0, 5) : ''))
+                ->addActionLabel('Ajouter un arrêt')
                 ->minItems(1)
                 ->schema([
-                    Select::make('zone_id')->label('Zone')->options(fn () => Zone::query()->where('actif', true)->orderBy('ordre')->pluck('nom', 'id'))
+                    Select::make('zone_id')->label('Arrêt / quartier')->options(fn () => Zone::query()->where('actif', true)->orderBy('ordre')->pluck('nom', 'id'))
                         ->required()
                         ->live()
                         ->afterStateUpdated(function ($state, Set $set) {
@@ -85,8 +93,9 @@ class DepartResource extends Resource
                         ->disableOptionsWhenSelectedInSiblingRepeaterItems(),
                     TextInput::make('prix')->numeric()->minValue(0)->suffix('FCFA')->required(),
                     TextInput::make('point_rdv')->label('Point de rendez-vous'),
-                    TimePicker::make('heure_ramassage')->label('Heure de ramassage')->seconds(false),
-                    Toggle::make('actif')->default(true),
+                    TimePicker::make('heure_ramassage')->label('Heure de passage estimée')->seconds(false),
+                    Toggle::make('principal')->label('Point principal'),
+                    Toggle::make('actif')->label('Actif')->default(true),
                 ])
                 ->columns(2)
                 ->required(),
@@ -101,8 +110,10 @@ class DepartResource extends Resource
                 TextColumn::make('evenement.titre')->label('Événement')->searchable(),
                 TextColumn::make('vehicule.nom')->label('Véhicule'),
                 TextColumn::make('depart_at')->dateTime('d/m/Y H:i')->sortable(),
-                TextColumn::make('places_reservees')->label('Réservées'),
-                TextColumn::make('places_total')->label('Total'),
+                TextColumn::make('places_reservees')->label('Remplissage')
+                    ->formatStateUsing(fn ($state, Depart $record) => $record->places_reservees.' / '.$record->places_total)
+                    ->color(fn (Depart $record) => $record->placesRestantes() === 0 ? 'danger' : ($record->placesRestantes() <= 3 ? 'warning' : null)),
+                TextColumn::make('tarifs_count')->label('Arrêts')->counts('tarifs'),
                 TextColumn::make('statut')->badge(),
             ])
             ->recordActions([EditAction::make()]);

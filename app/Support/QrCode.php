@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use BaconQrCode\Renderer\GDLibRenderer;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
@@ -17,5 +18,15 @@ final class QrCode
         );
 
         return (new Writer($renderer))->writeString($contenu);
+    }
+
+    /** PNG (pour les pièces jointes d'e-mail). Null si l'extension GD est absente. */
+    public static function png(string $contenu, int $taille = 480): ?string
+    {
+        if (! extension_loaded('gd')) {
+            return null;
+        }
+
+        return (new Writer(new GDLibRenderer($taille, 2)))->writeString($contenu);
     }
 }
