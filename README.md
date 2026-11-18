@@ -26,7 +26,7 @@ Planificateur (expiration des réservations non payées) : `php artisan schedule
 2. **Page événement** (`/evenements/{slug}`) : lien à partager par le promoteur. Le passager choisit le départ, son **arrêt sur l’itinéraire** (heure de passage, point de RDV), le nombre de places, et crée son compte **sur la même page**.
 3. **Suivi** (`/reservations/{ref}`) : paiement Wave, envoi de la capture du reçu (avec aperçu et compression), compte à rebours du délai de paiement.
 4. **Billets** : un QR code par place, page imprimable / PDF, lien facultatif vers le groupe WhatsApp de l’événement.
-5. **Mes billets** (`/mes-billets`) : réservations à finaliser, à venir, historique.
+5. **Mes réservations** (`/mes-reservations`) : statut de chaque réservation, paiement, billets.
 
 ## Console admin (`/admin`)
 

@@ -153,7 +153,7 @@
                         </div>
 
                         @if ($mode === 'inscription')
-                            <p class="hint" style="margin:0 0 12px">Ton compte est créé en même temps : tu retrouveras tes billets dans « Mes billets ».</p>
+                            <p class="hint" style="margin:0 0 12px">Ton compte est créé en même temps : tu retrouveras tes billets dans « Mes réservations ».</p>
                             <div class="grid2">
                                 <label class="field">Nom complet
                                     <input type="text" wire:model.blur="nom" autocomplete="name" placeholder="Awa Koné">
@@ -214,7 +214,7 @@
                 </div>
                 <ul class="reassure">
                     <li>✅ Paiement Mobile Money (Wave)</li>
-                    <li>📲 Billet QR code par e-mail et dans « Mes billets »</li>
+                    <li>📲 Billet QR code par e-mail et dans « Mes réservations »</li>
                     <li>⏱️ Places bloquées {{ (int) \App\Models\Setting::get('delai_paiement_min', 30) }} min le temps de payer</li>
                 </ul>
 

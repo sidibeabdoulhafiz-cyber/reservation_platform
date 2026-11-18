@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="theme-color" content="#0f1a2b">
+    <meta name="theme-color" content="#0C4173">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-icone.svg') }}">
     <title>{{ isset($title) ? $title.' · CotaTrans' : 'CotaTrans · Transport aller-retour pour vos événements' }}</title>
     <meta name="description" content="Réservez votre place en car pour vos concerts, festivals et matchs. Paiement mobile, billet QR code, ramassage près de chez vous.">
     @isset($ogImage)
@@ -13,18 +14,21 @@
     @livewireStyles
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f4f1ea;
+            /* Charte CotaTrans : bleu #0C4173, orange #FB7212 */
+            --bg: #f3f6fb;
             --surface: #fff;
-            --fg: #0f1a2b;
-            --muted: #5d6676;
-            --line: #e2ddd2;
-            --soft: #faf8f3;
-            --accent: #ff5a1f;
-            --accent-dark: #d9430c;
-            --accent-soft: #fff1ea;
+            --fg: #0d1f35;
+            --muted: #5a6779;
+            --line: #dde4ee;
+            --soft: #f7f9fc;
+            --accent: #FB7212;
+            --accent-dark: #d95e05;
+            --accent-soft: #fff3e9;
+            --brand: #0C4173;
+            --brand-dark: #08305a;
             --accent-fg: #fff;
             --ok: #0e7a55;
             --ok-soft: #e6f5ee;
@@ -32,13 +36,13 @@
             --err-soft: #fdecec;
             --warn: #a15c07;
             --warn-soft: #fff5e3;
-            --ink: #0f1a2b;
-            --ink-fg: #f3f5f9;
-            --ink-muted: #9aa6bb;
+            --ink: #0C4173;
+            --ink-fg: #f3f7fc;
+            --ink-muted: #a9bfd9;
             --radius: 18px;
             --shadow: 0 1px 2px rgba(15, 26, 43, .06), 0 8px 24px rgba(15, 26, 43, .06);
-            --display: 'Bricolage Grotesque', system-ui, sans-serif;
-            --body: 'DM Sans', system-ui, sans-serif;
+            --display: 'Outfit', system-ui, sans-serif;
+            --body: 'Outfit', system-ui, sans-serif;
             --mono: 'DM Mono', ui-monospace, monospace;
         }
         *, *::before, *::after { box-sizing: border-box; }
@@ -50,35 +54,41 @@
         [x-cloak] { display: none !important; }
         .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
-        /* ---------- En-tête ---------- */
-        .site-top { background: var(--ink); color: var(--ink-fg); position: sticky; top: 0; z-index: 30; }
-        .nav { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 16px; max-width: 1120px; margin: 0 auto; }
-        .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
-        .brand-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); display: grid; place-items: center; }
-        .brand-mark svg { width: 20px; height: 20px; }
-        .brand-name { font: 800 1.2rem var(--display); letter-spacing: -.03em; }
-        .brand-name i { font-style: normal; color: var(--accent); }
-        .links { display: flex; gap: 2px; align-items: center; }
+        /* ---------- En-tête (charte CotaTrans) ---------- */
+        .site-top { background: var(--brand); color: #fff; position: sticky; top: 0; z-index: 30; border-bottom: 4px solid var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 20px; max-width: 1200px; margin: 0 auto; min-height: 76px; }
+        .brand { display: inline-flex; align-items: center; text-decoration: none; flex: none; }
+        .brand img { height: 46px; width: auto; }
+        .links { display: flex; gap: 6px; align-items: center; flex: 1; justify-content: space-between; }
+        .links-main, .links-user { display: flex; gap: 6px; align-items: center; }
+        .links-main { margin: 0 auto; }
         .links form { margin: 0; }
         .links a, .linkbtn {
-            font: 600 14px var(--body); color: var(--ink-fg); text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
-            padding: 8px 12px; min-height: 44px; border-radius: 10px; background: none; border: 0; cursor: pointer;
+            font: 600 17px var(--body); color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 14px; min-height: 44px; background: none; border: 0; cursor: pointer; position: relative;
         }
-        .links a:hover, .linkbtn:hover { background: rgba(255,255,255,.08); }
-        .links a.on { background: rgba(255,255,255,.12); }
-        .links .pill { background: var(--accent); color: #fff; }
+        .links-main a::after { content: ''; position: absolute; left: 14px; right: 14px; bottom: 4px; height: 2px; background: var(--accent); transform: scaleX(0); transition: transform .15s; }
+        .links-main a:hover::after, .links-main a.on::after { transform: scaleX(1); }
+        .links .who { font-weight: 600; }
+        .links .outline { border: 1.5px solid rgba(255,255,255,.75); border-radius: 12px; padding: 8px 20px; }
+        .links .outline:hover { background: rgba(255,255,255,.1); border-color: #fff; }
+        .links .pill { background: var(--accent); border-radius: 12px; padding: 8px 20px; }
         .links .pill:hover { background: var(--accent-dark); }
         .menu-toggle { display: none; }
-        @media (max-width: 720px) {
-            .menu-toggle { display: inline-flex; }
-            .links { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--ink); flex-direction: column; align-items: stretch; padding: 8px 12px 14px; border-top: 1px solid rgba(255,255,255,.08); }
+        @media (max-width: 900px) {
+            .brand img { height: 38px; }
+            .menu-toggle { display: inline-flex; width: auto !important; flex: none; border: 1.5px solid rgba(255,255,255,.6) !important; border-radius: 10px; padding: 8px 16px; }
+            .links { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--brand); flex-direction: column; align-items: stretch; padding: 10px 16px 16px; border-bottom: 4px solid var(--accent); }
             .links.open { display: flex; }
+            .links-main, .links-user { flex-direction: column; align-items: stretch; margin: 0; }
+            .links-user { border-top: 1px solid rgba(255,255,255,.15); padding-top: 8px; margin-top: 4px; }
             .links a, .linkbtn { width: 100%; justify-content: flex-start; }
+            .links-main a::after { left: 14px; right: auto; width: 40px; }
         }
 
         /* ---------- Structure ---------- */
         main { flex: 1; }
-        .wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 120px; }
+        .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 16px 120px; }
         .narrow { max-width: 560px; margin: 0 auto; }
         .mono { font-family: var(--mono); font-size: 13px; }
         .hint { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
@@ -88,8 +98,15 @@
         .hero { margin-bottom: 20px; }
         .hero p { color: var(--muted); margin: 0; max-width: 60ch; }
         .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
-        .site-foot { border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
-        .site-foot .in { max-width: 1120px; margin: 0 auto; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+        .site-foot { background: var(--brand-dark); color: #c9d6e6; font-size: 15px; border-top: 4px solid var(--accent); }
+        .site-foot .in { max-width: 1200px; margin: 0 auto; padding: 36px 20px 20px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; }
+        .foot-brand { max-width: 420px; }
+        .foot-brand img { height: 40px; width: auto; margin-bottom: 10px; }
+        .foot-brand p { margin: 0; }
+        .foot-links { display: grid; gap: 8px; align-content: start; }
+        .foot-links a { color: #fff; text-decoration: none; font-weight: 500; }
+        .foot-links a:hover { color: var(--accent); }
+        .site-foot .copy { max-width: 1200px; margin: 0 auto; padding: 14px 20px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,.12); font-size: 13px; }
 
         /* ---------- Boutons ---------- */
         .cta, .btn {
@@ -267,33 +284,37 @@
     <header class="site-top" x-data="{ open: false }">
         <nav class="nav" aria-label="Navigation principale">
             <a href="{{ route('home') }}" class="brand" aria-label="CotaTrans, accueil">
-                <span class="brand-mark" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="3"/><path d="M3 11h18"/><circle cx="7.5" cy="19.5" r="1.5"/><circle cx="16.5" cy="19.5" r="1.5"/></svg>
-                </span>
-                <span class="brand-name">Cota<i>Trans</i></span>
+                <img src="{{ asset('images/logo-horizontal-blanc.svg') }}" alt="CotaTrans" width="161" height="46">
             </a>
             <button type="button" class="linkbtn menu-toggle" @click="open = !open" :aria-expanded="open" aria-controls="menu">
                 <span x-text="open ? 'Fermer' : 'Menu'">Menu</span>
             </button>
             <div class="links" id="menu" :class="{ open }">
-                <a href="{{ route('home') }}" @class(['on' => request()->routeIs('home', 'evenements.*')])>Événements</a>
-                @auth
-                    <a href="{{ route('reservations.index') }}" @class(['on' => request()->routeIs('reservations.*')])>Mes billets</a>
-                    @if (auth()->user()->peutScanner())
-                        <a href="{{ route('controle.scanner') }}" @class(['on' => request()->routeIs('controle.*')])>Contrôle</a>
-                    @endif
-                    @if (auth()->user()->estAdmin())
-                        <a href="{{ url('/admin') }}">Admin</a>
-                    @endif
-                    <a href="{{ route('profile.edit') }}">Profil</a>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="linkbtn">Déconnexion</button>
-                    </form>
-                @else
-                    <a href="{{ route('login') }}">Connexion</a>
-                    <a href="{{ route('register') }}" class="pill">Créer un compte</a>
-                @endauth
+                <div class="links-main">
+                    <a href="{{ route('home') }}#evenements" @class(['on' => request()->routeIs('evenements.*')])>Événements</a>
+                    <a href="{{ route('home') }}#comment-ca-marche">Comment ça marche ?</a>
+                    @auth
+                        <a href="{{ route('reservations.index') }}" @class(['on' => request()->routeIs('reservations.*')])>Mes réservations</a>
+                        @if (auth()->user()->peutScanner())
+                            <a href="{{ route('controle.scanner') }}" @class(['on' => request()->routeIs('controle.*')])>Contrôle</a>
+                        @endif
+                        @if (auth()->user()->estAdmin())
+                            <a href="{{ url('/admin') }}">Admin</a>
+                        @endif
+                    @endauth
+                </div>
+                <div class="links-user">
+                    @auth
+                        <a href="{{ route('profile.edit') }}" class="who">{{ \Illuminate\Support\Str::of(auth()->user()->name)->before(' ') }}</a>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="linkbtn outline">Déconnexion</button>
+                        </form>
+                    @else
+                        <a href="{{ route('login') }}">Connexion</a>
+                        <a href="{{ route('register') }}" class="pill">Créer un compte</a>
+                    @endauth
+                </div>
             </div>
         </nav>
     </header>
@@ -310,9 +331,18 @@
 
     <footer class="site-foot">
         <div class="in">
-            <span>© {{ date('Y') }} CotaTrans · Transport aller-retour pour vos événements</span>
-            <span>Paiement Mobile Money · Billet QR code</span>
+            <div class="foot-brand">
+                <img src="{{ asset('images/logo-horizontal-blanc.svg') }}" alt="CotaTrans" width="140" height="40">
+                <p>Ton transport aller-retour pour les concerts, festivals et matchs. Un seul paiement, un billet QR par passager.</p>
+            </div>
+            <div class="foot-links">
+                <a href="{{ route('home') }}#evenements">Événements</a>
+                <a href="{{ route('home') }}#comment-ca-marche">Comment ça marche ?</a>
+                <a href="{{ route('home') }}#a-propos">À propos</a>
+                @auth <a href="{{ route('reservations.index') }}">Mes réservations</a> @endauth
+            </div>
         </div>
+        <div class="copy">© {{ date('Y') }} CotaTrans · Paiement Mobile Money · Billet QR code</div>
     </footer>
     @livewireScripts
     @stack('scripts')

@@ -37,7 +37,7 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('reservations.index');
     })->name('dashboard');
 
-    Route::get('/mes-billets', MyReservations::class)->name('reservations.index');
+    Route::get('/mes-reservations', MyReservations::class)->name('reservations.index');
     Route::get('/reservations/{reservation}', Suivi::class)->name('reservations.show');
     Route::get('/reservations/{reservation}/imprimer', ImpressionController::class)->name('reservations.imprimer');
 
@@ -51,7 +51,8 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Ancienne URL : redirection permanente.
-Route::redirect('/my-reservations', '/mes-billets', 301);
+Route::redirect('/my-reservations', '/mes-reservations', 301);
+Route::redirect('/mes-billets', '/mes-reservations', 301);
 
 if (! app()->environment('production')) {
     Route::get('/dev/payer', function () {

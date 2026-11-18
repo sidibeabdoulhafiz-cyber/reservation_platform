@@ -7,7 +7,7 @@
         $pos = $ordre[$etape];
     @endphp
 
-    <a href="{{ route('reservations.index') }}" class="back noprint">← Mes billets</a>
+    <a href="{{ route('reservations.index') }}" class="back noprint">← Mes réservations</a>
 
     @if ($etape !== 'close')
         <ol class="progress noprint" aria-label="Avancement">

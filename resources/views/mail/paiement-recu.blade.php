@@ -4,7 +4,7 @@
 
 Merci {{ \Illuminate\Support\Str::of($r->user->name)->before(' ') }} ! Nous avons bien reçu la preuve de paiement pour **{{ $evt?->titre }}** (réservation {{ $r->ref }}).
 
-Notre équipe la vérifie en ce moment. Dès qu’elle est validée, tu reçois tes billets QR code par e-mail. Ils sont aussi disponibles dans « Mes billets ».
+Notre équipe la vérifie en ce moment. Dès qu’elle est validée, tu reçois tes billets QR code par e-mail. Ils sont aussi disponibles dans « Mes réservations ».
 
 <x-mail::button :url="route('reservations.show', $r)">
 Suivre ma réservation

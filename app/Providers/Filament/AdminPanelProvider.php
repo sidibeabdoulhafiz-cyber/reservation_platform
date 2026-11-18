@@ -30,8 +30,13 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             // ->register()
             ->brandName('CotaTrans')
+            ->brandLogo(fn () => asset('images/logo-horizontal.svg'))
+            ->darkModeBrandLogo(fn () => asset('images/logo-horizontal-blanc.svg'))
+            ->brandLogoHeight('2.6rem')
+            ->favicon(fn () => asset('images/logo-icone.svg'))
             ->colors([
-                'primary' => Color::hex('#ff5a1f'),
+                'primary' => Color::hex('#FB7212'),
+                'info' => Color::hex('#0C4173'),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
