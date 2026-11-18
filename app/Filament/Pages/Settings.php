@@ -6,6 +6,7 @@ use App\Models\Setting;
 use App\Support\Wave;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
@@ -65,6 +66,7 @@ class Settings extends Page
             'delai_paiement_min' => (int) Setting::get('delai_paiement_min', 30),
             'message_global' => Setting::get('message_global', ''),
             'site_ouvert' => (string) Setting::get('site_ouvert', '1') === '1',
+            'hero_image' => Setting::get('hero_image') ?: null,
         ]);
     }
 
@@ -81,6 +83,12 @@ class Settings extends Page
                 TextInput::make('message_global')->label('Message affiché sur le site')
                     ->helperText('Facultatif. Visible en haut de toutes les pages.')->maxLength(255),
                 Toggle::make('site_ouvert')->label('Réservations ouvertes'),
+                FileUpload::make('hero_image')->label('Photo de la bannière d’accueil')
+                    ->helperText('Photo paysage (ex. car de participants devant un stade ou une salle). 1920×1080 conseillé, 5 Mo max. Un dégradé bleu est ajouté à gauche pour la lisibilité du texte.')
+                    ->image()->disk('public')->directory('site')->visibility('public')
+                    ->maxSize(5120)->imageEditor()->imageEditorAspectRatioOptions(['16:9', '21:9'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->columnSpanFull(),
             ])
             ->statePath('data');
     }
@@ -106,6 +114,7 @@ class Settings extends Page
         Setting::set('delai_paiement_min', (string) $data['delai_paiement_min']);
         Setting::set('message_global', $data['message_global'] ?? '');
         Setting::set('site_ouvert', $data['site_ouvert'] ? '1' : '0');
+        Setting::set('hero_image', $data['hero_image'] ?? '');
 
         Notification::make()->title('Réglages enregistrés')->success()->send();
     }

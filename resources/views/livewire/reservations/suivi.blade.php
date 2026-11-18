@@ -7,7 +7,7 @@
         $pos = $ordre[$etape];
     @endphp
 
-    <a href="{{ route('reservations.index') }}" class="back noprint">← Mes réservations</a>
+    <a href="{{ route('reservations.index') }}" class="back noprint"><x-ico name="arrow-left" size="18" /> Mes réservations</a>
 
     @if ($etape !== 'close')
         <ol class="progress noprint" aria-label="Avancement">
@@ -26,39 +26,48 @@
             <h1>Paiement en vérification</h1>
             <p>Notre équipe vérifie ton reçu. Tes billets s’affichent ici automatiquement, et tu les reçois par e-mail.</p>
         @elseif ($etape === 'billets')
-            <h1>C’est validé, bon voyage ! 🎉</h1>
-            <p>Un QR code par place. Montre-le à l’agent au moment de monter dans le car.</p>
+            <h1>C’est validé, bon voyage !</h1>
+            <p>Un QR code par passager. Il est contrôlé à la montée de l’aller, puis à celle du retour.</p>
         @else
             <h1>Réservation {{ strtolower($r->statut->getLabel()) }}</h1>
             <p>Cette réservation n’est plus active.</p>
         @endif
     </header>
 
-    {{-- Résumé de la commande --}}
+    {{-- Résumé : trajet, passagers, montant --}}
     <section class="panel resume noprint">
         <div class="rhead">
             <div>
-                <div class="mono">{{ $r->ref }}</div>
-                <h3 style="margin:2px 0 0">{{ $evt?->titre }}</h3>
-                <div class="hint" style="margin:2px 0 0">
-                    @if ($r->type === \App\Enums\ReservationType::Transport)
-                        Montée à <strong>{{ $r->zone?->nom }}</strong>
-                        @php $arret = $r->depart?->tarifs->firstWhere('zone_id', $r->zone_id); @endphp
-                        @if ($arret?->heure()) vers {{ $arret->heure() }} @endif
-                        · départ {{ $r->depart?->depart_at->locale('fr')->translatedFormat('D j M') }}
-                    @else
-                        {{ $r->typeBillet?->nom }}
-                    @endif
-                </div>
+                <div class="mono muted">{{ $r->ref }}</div>
+                <h2 style="margin:2px 0 0">{{ $evt?->titre }}</h2>
+                @if ($r->type !== \App\Enums\ReservationType::Transport)
+                    <div class="hint" style="margin:2px 0 0">{{ $r->typeBillet?->nom }}</div>
+                @endif
             </div>
             <span class="badge {{ $r->statut->value }}">{{ $r->statut->getLabel() }}</span>
         </div>
+
+        @if ($r->type === \App\Enums\ReservationType::Transport)
+            <x-trajet :reservation="$r" class="resume-trajet" />
+        @endif
+
         <div class="rbody">
-            <div><span class="k">Places</span>{{ $r->quantite }}</div>
-            <div><span class="k">Prix unitaire</span><span class="mono">{{ number_format($r->prix_unitaire, 0, ',', ' ') }} F</span></div>
-            <div><span class="k">Total</span><strong class="mono" style="font-size:16px">{{ number_format($r->montant, 0, ',', ' ') }} FCFA</strong></div>
+            <div>
+                <span class="k">{{ $r->quantite }} passager{{ $r->quantite > 1 ? 's' : '' }}</span>
+                <ul class="pax-names">
+                    @foreach ($r->nomsPassagers() as $nomPax)
+                        <li><x-ico name="user" size="15" /> {{ $nomPax }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            <div class="rtotal">
+                <span class="k">Total</span>
+                <strong>{{ number_format($r->montant, 0, ',', ' ') }} FCFA</strong>
+                <small class="muted">{{ $r->quantite }} × {{ number_format($r->prix_unitaire, 0, ',', ' ') }} F</small>
+            </div>
         </div>
     </section>
+
 
     @if ($etape === 'payer')
         @php $refus = $r->paiements->first(fn ($p) => $p->statut === \App\Enums\PaiementStatus::Refuse); @endphp
@@ -70,7 +79,7 @@
             <div class="countdown" x-data="{ fin: {{ $r->expire_at->getTimestamp() * 1000 }}, reste: '', urgent: false, t: null,
                     tick() { const s = Math.max(0, Math.floor((this.fin - Date.now()) / 1000)); this.reste = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); this.urgent = s < 300; if (s === 0) { clearInterval(this.t); $wire.$refresh(); } } }"
                  x-init="tick(); t = setInterval(() => tick(), 1000)" :class="{ urgent }">
-                ⏱️ Places bloquées encore <strong class="mono" x-text="reste"></strong> (jusqu’à {{ $r->expire_at->format('H\hi') }})
+                <x-ico name="clock" size="18" style="vertical-align:-3px" /> Places bloquées encore <strong class="mono" x-text="reste"></strong> (jusqu’à {{ $r->expire_at->format('H\hi') }})
             </div>
         @endif
 
@@ -112,7 +121,7 @@
                 <input type="file" accept="image/*" x-ref="file" @change="choisir($event)">
                 <template x-if="!apercu">
                     <span class="drop-empty">
-                        <span class="ico" aria-hidden="true">📸</span>
+                        <span class="drop-ico" aria-hidden="true"><x-ico name="camera" size="28" /></span>
                         <b>Ajouter la capture du reçu</b>
                         <small>Touche ici pour choisir dans ta galerie</small>
                     </span>
@@ -166,9 +175,9 @@
         </section>
     @elseif ($etape === 'billets')
         <div class="actions noprint">
-            <a class="btn btn-ghost" href="{{ route('reservations.imprimer', $r) }}" target="_blank">🖨️ Imprimer / PDF</a>
+            <a class="btn btn-ghost" href="{{ route('reservations.imprimer', $r) }}" target="_blank"><x-ico name="printer" size="18" /> Imprimer / PDF</a>
             @if ($evt?->lien_whatsapp)
-                <a class="btn btn-wa" href="{{ $evt->lien_whatsapp }}" target="_blank" rel="noopener">💬 Rejoindre le groupe WhatsApp</a>
+                <a class="btn btn-wa" href="{{ $evt->lien_whatsapp }}" target="_blank" rel="noopener"><x-ico name="chat" size="18" /> Rejoindre le groupe WhatsApp</a>
             @endif
         </div>
 
@@ -194,18 +203,25 @@
         .back { display: inline-block; color: var(--muted); text-decoration: none; font-weight: 600; font-size: 14px; margin-bottom: 14px; }
         .progress { display: flex; list-style: none; padding: 0; margin: 0 0 18px; gap: 4px; }
         .progress li { flex: 1; text-align: center; font: 600 11px var(--body); text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding-top: 10px; border-top: 4px solid var(--line); }
-        .progress li.done { color: var(--ok); border-color: var(--ok); }
+        .progress li.done { color: var(--brand); border-color: var(--brand); }
         .progress li.on { color: var(--accent-dark); border-color: var(--accent); }
         .resume { margin-bottom: 16px; }
+        .resume h2 { font-size: 1.3rem; }
         .rhead { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-        .rbody { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+        .rbody { display: flex; justify-content: space-between; gap: 16px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+        .resume-trajet { margin-top: 16px; padding: 14px; background: var(--soft); border-radius: 12px; }
+        .pax-names { list-style: none; padding: 0; margin: 4px 0 0; display: grid; gap: 4px; }
+        .pax-names li { display: flex; gap: 6px; align-items: center; font-weight: 500; }
+        .pax-names .ico { color: var(--brand); }
+        .rtotal { text-align: right; display: grid; }
+        .rtotal strong { font: 700 1.35rem var(--display); color: var(--brand); }
         .rbody .k { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
         .countdown { background: var(--warn-soft); border: 1px solid #f3d39b; color: var(--warn); border-radius: 14px; padding: 10px 14px; margin-bottom: 16px; font-size: 14px; }
         .countdown.urgent { background: var(--err-soft); border-color: #f4b8b3; color: var(--err); }
         .paystep { margin-bottom: 16px; }
         .ps-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
         .ps-head h3 { margin: 0; }
-        .ps-head .num { width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font: 700 14px var(--display); flex: none; }
+        .ps-head .num { width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font: 600 14px var(--body); flex: none; }
         .cta.wave { background: #1dc8ff; color: #04263a; }
         .cta.wave:hover { background: #0bb4ea; }
         .drop { position: relative; display: block; border: 2px dashed var(--line); border-radius: 16px; background: var(--soft); cursor: pointer; transition: border-color .15s; }
@@ -213,7 +229,7 @@
         .drop.filled { border-style: solid; border-color: var(--ok); background: var(--ok-soft); }
         .drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
         .drop-empty { display: grid; justify-items: center; gap: 4px; padding: 26px 16px; text-align: center; }
-        .drop-empty .ico { font-size: 30px; }
+        .drop-empty .drop-ico { color: var(--brand); width: 56px; height: 56px; border-radius: 50%; background: var(--brand-soft); display: grid; place-items: center; margin-bottom: 4px; }
         .drop-empty small, .drop-filled small { color: var(--muted); }
         .drop-filled { display: flex; align-items: center; gap: 14px; padding: 12px; }
         .drop-filled img { width: 64px; height: 84px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }

@@ -1,6 +1,6 @@
 <section>
     <h2>Mot de passe</h2>
-    <p class="hint">Choisissez un mot de passe que vous seul connaissez.</p>
+    <p class="hint">8 caractères minimum. Ne le partage avec personne.</p>
 
     <form method="post" action="{{ route('password.update') }}" style="margin-top:12px">
         @csrf
@@ -27,7 +27,7 @@
         <button class="cta" type="submit"><span>Mettre à jour le mot de passe</span></button>
 
         @if (session('status') === 'password-updated')
-            <p class="hint note-ok">Enregistré.</p>
+            <p class="alert alert-ok" style="margin:12px 0 0">Mot de passe mis à jour.</p>
         @endif
     </form>
 </section>

@@ -1,4 +1,4 @@
-<x-layouts.site :title="$title ?? config('app.name')">
+<x-layouts.site :title="$title ?? 'Mon compte'">
     @isset($header)
         <header class="hero">{{ $header }}</header>
     @endisset

@@ -81,6 +81,7 @@ class CreateReservation
                 'ref' => Codes::reservation(),
                 'type' => $type,
                 'quantite' => $quantite,
+                'passagers' => $this->passagers($choix['passagers'] ?? [], $quantite, $user),
                 'prix_unitaire' => $prix,
                 'montant' => $prix * $quantite,
                 'statut' => ReservationStatus::APayer,
@@ -147,5 +148,24 @@ class CreateReservation
                 'quantite' => 'Choisissez entre 1 et '.$max.' '.$mot.' par commande.',
             ]);
         }
+    }
+
+    /**
+     * Noms des passagers (invités sans compte autorisés). Un nom par place, 120 caractères max.
+     *
+     * @return list<string>
+     */
+    private function passagers(mixed $saisis, int $quantite, User $user): array
+    {
+        $saisis = array_values(is_array($saisis) ? $saisis : []);
+        $noms = [];
+
+        for ($i = 0; $i < $quantite; $i++) {
+            $nom = trim(strip_tags((string) ($saisis[$i] ?? '')));
+            $nom = mb_substr(preg_replace('/\s+/u', ' ', $nom) ?? '', 0, 120);
+            $noms[] = $nom !== '' ? $nom : ($i === 0 ? $user->name : 'Passager '.($i + 1));
+        }
+
+        return $noms;
     }
 }

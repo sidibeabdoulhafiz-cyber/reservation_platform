@@ -35,6 +35,9 @@ class Create extends Component
 
     public int $quantite = 1;
 
+    /** Noms des passagers (un par place). Le passager 1 est le payeur par défaut. */
+    public array $passagers = [''];
+
     /** Identification du passager non connecté : « inscription » ou « connexion ». */
     public string $mode = 'inscription';
 
@@ -58,6 +61,7 @@ class Create extends Component
             $this->zone_id = $draft['zone_id'] ?? 0;
             $this->type_billet_id = $draft['type_billet_id'] ?? 0;
             $this->quantite = (int) ($draft['quantite'] ?? 1);
+            $this->passagers = array_values((array) ($draft['passagers'] ?? ['']));
         }
 
         $this->assurerSelection();
@@ -169,6 +173,7 @@ class Create extends Component
         if ($this->quantite < $this->maxPossible) {
             $this->quantite++;
         }
+        $this->ajusterPassagers();
     }
 
     public function decrement(): void
@@ -176,10 +181,41 @@ class Create extends Component
         if ($this->quantite > 1) {
             $this->quantite--;
         }
+        $this->ajusterPassagers();
+    }
+
+    /** Retire un passager précis (et donc une place). */
+    public function retirerPassager(int $index): void
+    {
+        if ($this->quantite <= 1 || $index < 1 || $index >= count($this->passagers)) {
+            return;
+        }
+        array_splice($this->passagers, $index, 1);
+        $this->quantite--;
+        $this->ajusterPassagers();
+    }
+
+    /** Une ligne de nom par place. */
+    private function ajusterPassagers(): void
+    {
+        $this->passagers = array_slice(array_pad(array_values($this->passagers), $this->quantite, ''), 0, $this->quantite);
+    }
+
+    public function nomPayeur(): string
+    {
+        return Auth::user()?->name ?: trim($this->nom);
     }
 
     public function reserve(CreateReservation $create)
     {
+        $this->ajusterPassagers();
+        $this->validate([
+            'passagers' => ['array'],
+            'passagers.*' => ['nullable', 'string', 'max:120'],
+        ], [
+            'passagers.*.max' => 'Le nom d’un passager ne doit pas dépasser 120 caractères.',
+        ]);
+
         $choix = [
             'type' => $this->canal,
             'evenement_id' => $this->evenement->id,
@@ -187,11 +223,16 @@ class Create extends Component
             'zone_id' => (int) $this->zone_id,
             'type_billet_id' => (int) $this->type_billet_id,
             'quantite' => $this->quantite,
+            'passagers' => $this->passagers,
         ];
 
         if (! Auth::check()) {
             session(['reservation_draft' => $choix]);
             $this->identifier();
+        }
+
+        if (trim((string) ($choix['passagers'][0] ?? '')) === '') {
+            $choix['passagers'][0] = Auth::user()->name;
         }
 
         $reservation = $create->handle(Auth::user(), $choix);
@@ -305,5 +346,6 @@ class Create extends Component
 
         unset($this->prixUnitaire, $this->maxParCommande, $this->restant, $this->maxPossible);
         $this->quantite = max(1, min($this->quantite, max(1, $this->maxPossible)));
+        $this->ajusterPassagers();
     }
 }

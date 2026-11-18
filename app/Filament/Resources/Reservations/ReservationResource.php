@@ -14,6 +14,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 class ReservationResource extends Resource
 {
@@ -40,12 +41,22 @@ class ReservationResource extends Resource
     {
         return $table
             ->defaultSort('created_at', 'desc')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['user', 'zone', 'depart.evenement', 'typeBillet']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['user', 'zone', 'depart.evenement', 'typeBillet', 'billets']))
             ->columns([
                 TextColumn::make('ref')->label('Référence')->searchable()->copyable(),
                 TextColumn::make('user.name')->label('Client')->searchable(),
                 TextColumn::make('type')->badge(),
-                TextColumn::make('quantite')->label('Places'),
+                TextColumn::make('evenement')->label('Événement')
+                    ->state(fn (Reservation $record) => $record->evenement()?->titre)
+                    ->description(fn (Reservation $record) => $record->zone?->nom),
+                TextColumn::make('quantite')->label('Passagers')
+                    ->description(fn (Reservation $record) => Str::limit(implode(', ', $record->nomsPassagers()), 60))
+                    ->tooltip(fn (Reservation $record) => implode("\n", $record->nomsPassagers())),
+                TextColumn::make('controles')->label('Contrôles A / R')
+                    ->state(fn (Reservation $record) => $record->billets->isEmpty() ? null
+                        : $record->billets->whereNotNull('aller_scanne_at')->count().' / '.$record->billets->whereNotNull('retour_scanne_at')->count().' sur '.$record->billets->count())
+                    ->placeholder('—')
+                    ->toggleable(),
                 TextColumn::make('montant')
                     ->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', ' ').' FCFA')
                     ->sortable(),

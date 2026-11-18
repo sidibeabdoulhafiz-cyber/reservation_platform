@@ -7,11 +7,12 @@
         $max = $this->maxPossible;
         $complet = $this->canal === 'transport' ? ($depart && $this->restant === 0) : ($this->typeBillet && $this->restant === 0);
         $n = 1;
+        $transport = $canal === 'transport';
     @endphp
 
-    <a href="{{ route('home') }}" class="back noprint">← Tous les événements</a>
+    <a href="{{ route('home') }}#evenements" class="back noprint"><x-ico name="arrow-left" size="18" /> Tous les événements</a>
 
-    {{-- En-tête événement avec affiche --}}
+    {{-- En-tête événement --}}
     <header class="evt-hero">
         <x-evenement-cover :evenement="$evt" :badge="false" :eager="true" class="evt-cover" />
         <div class="evt-info">
@@ -20,12 +21,12 @@
             @if ($evt->accroche)
                 <p class="lead">{{ $evt->accroche }}</p>
             @endif
-            <div class="facts">
-                <span>📍 {{ $evt->lieu }}, {{ $evt->ville }}</span>
+            <ul class="facts">
+                <li><x-ico name="pin" size="17" /> {{ $evt->lieu }}, {{ $evt->ville }}</li>
                 @if ($depart)
-                    <span>🚌 Départ {{ $depart->depart_at->format('H\hi') }}@if ($depart->retour_at) · retour {{ $depart->retour_at->format('H\hi') }}@endif</span>
+                    <li><x-ico name="bus" size="17" /> Départ {{ $depart->depart_at->format('H\hi') }}@if ($depart->retour_at) · retour {{ $depart->retour_at->format('H\hi') }}@endif</li>
                 @endif
-            </div>
+            </ul>
             @if ($evt->description)
                 <details class="desc">
                     <summary>À propos de l’événement</summary>
@@ -36,11 +37,12 @@
     </header>
 
     @if (! $this->open)
-        <div class="alert alert-warn">Les réservations sont fermées pour le moment.</div>
+        <div class="alert alert-warn"><x-ico name="info" /> Les réservations sont fermées pour le moment. Reviens un peu plus tard.</div>
     @endif
 
     @if ($errors->has('reservation') || $errors->has('quantite') || $errors->has('depart_id') || $errors->has('zone_id') || $errors->has('type_billet_id'))
         <div class="alert alert-err" role="alert">
+            <x-ico name="alert" />
             <div>
                 @foreach (['reservation', 'quantite', 'depart_id', 'zone_id', 'type_billet_id'] as $k)
                     @error($k) <div>{{ $message }}</div> @enderror
@@ -51,20 +53,22 @@
 
     @if ($this->departs->isEmpty() && $this->typesBillets->isEmpty())
         <div class="panel empty">
+            <x-ico name="calendar" size="34" />
             <h3>Pas encore de départ ouvert</h3>
-            <p class="hint">Les places pour cet événement ne sont pas encore en vente. Revenez bientôt.</p>
+            <p class="hint">Les places pour cet événement ne sont pas encore en vente. Reviens bientôt.</p>
+            <a href="{{ route('home') }}#evenements" class="btn btn-ghost" style="margin-top:12px">Voir d’autres événements</a>
         </div>
     @else
         <form class="booking" wire:submit="reserve">
             <div class="panel steps-panel">
                 @if ($this->departs->isNotEmpty() && $this->typesBillets->isNotEmpty())
-                    <div class="canaux" role="tablist" aria-label="Type de réservation">
-                        <button type="button" role="tab" aria-selected="{{ $canal === 'transport' ? 'true' : 'false' }}" class="canal {{ $canal === 'transport' ? 'on' : '' }}" wire:click="$set('canal', 'transport')">🚌 Place en car</button>
-                        <button type="button" role="tab" aria-selected="{{ $canal === 'billet' ? 'true' : 'false' }}" class="canal {{ $canal === 'billet' ? 'on' : '' }}" wire:click="$set('canal', 'billet')">🎟️ Billet d’entrée</button>
+                    <div class="seg seg-full" role="tablist" aria-label="Type de réservation">
+                        <button type="button" role="tab" aria-selected="{{ $transport ? 'true' : 'false' }}" class="{{ $transport ? 'on' : '' }}" wire:click="$set('canal', 'transport')"><x-ico name="bus" size="18" /> Transport</button>
+                        <button type="button" role="tab" aria-selected="{{ ! $transport ? 'true' : 'false' }}" class="{{ ! $transport ? 'on' : '' }}" wire:click="$set('canal', 'billet')"><x-ico name="ticket" size="18" /> Billet d’entrée</button>
                     </div>
                 @endif
 
-                @if ($canal === 'transport')
+                @if ($transport)
                     @if ($this->departs->count() > 1)
                         <fieldset>
                             <legend><span class="num">{{ $n++ }}</span> Choisis ton départ</legend>
@@ -85,16 +89,16 @@
 
                     <fieldset>
                         <legend><span class="num">{{ $n++ }}</span> Où montes-tu ?</legend>
-                        <p class="hint" style="margin:-4px 0 12px">Le car passe par ces arrêts, dans cet ordre. Choisis le plus proche de chez toi.</p>
+                        <p class="hint step-hint">Le car passe par ces arrêts, dans cet ordre. Choisis le plus proche de chez toi.</p>
                         <ol class="route" aria-label="Itinéraire">
                             @foreach ($this->tarifs as $t)
                                 <li class="stop {{ $t->principal ? 'principal' : '' }}" wire:key="z-{{ $t->id }}">
-                                    <input type="radio" name="zone" wire:model.live="zone_id" value="{{ $t->zone_id }}" aria-label="{{ $t->zone->nom }}, {{ number_format($t->prix, 0, ',', ' ') }} francs">
+                                    <input type="radio" name="zone" wire:model.live="zone_id" value="{{ $t->zone_id }}" aria-label="{{ $t->zone->nom }}, passage vers {{ $t->heure() ?? 'heure à confirmer' }}, {{ number_format($t->prix, 0, ',', ' ') }} francs">
                                     <div class="body">
                                         <span class="time">{{ $t->heure() ?? '—' }}</span>
                                         <span class="dot" aria-hidden="true"></span>
                                         <span class="name">
-                                            <b>{{ $t->zone->nom }} @if ($t->principal)<span class="tag-main">Point principal</span>@endif</b>
+                                            <b>{{ $t->zone->nom }} @if ($t->principal)<span class="tag-main">Principal</span>@endif</b>
                                             @if ($t->point_rdv)<small>{{ $t->point_rdv }}</small>@endif
                                         </span>
                                         <span class="price">{{ number_format($t->prix, 0, ',', ' ') }} F</span>
@@ -102,7 +106,7 @@
                                 </li>
                             @endforeach
                         </ol>
-                        <div class="route-end"><span></span><span class="flag" aria-hidden="true">🏁</span><span>{{ $evt->lieu }}</span></div>
+                        <div class="route-end"><span></span><x-ico name="flag" size="18" /><span>Arrivée : {{ $evt->lieu }}</span></div>
                     </fieldset>
                 @else
                     <fieldset>
@@ -126,101 +130,132 @@
                 @endif
 
                 <fieldset>
-                    <legend><span class="num">{{ $n++ }}</span> {{ $canal === 'transport' ? 'Combien de places ?' : 'Combien de billets ?' }}</legend>
-                    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+                    <legend><span class="num">{{ $n++ }}</span> Qui voyage ?</legend>
+                    <div class="qty-row">
                         <div class="stepper">
-                            <button type="button" wire:click="decrement" aria-label="Retirer une place" @disabled($quantite <= 1)>−</button>
+                            <button type="button" wire:click="decrement" aria-label="Retirer un passager" @disabled($quantite <= 1)><x-ico name="minus" /></button>
                             <output aria-live="polite">{{ $quantite }}</output>
-                            <button type="button" wire:click="increment" aria-label="Ajouter une place" @disabled($quantite >= $max)>+</button>
+                            <button type="button" wire:click="increment" aria-label="Ajouter un passager" @disabled($quantite >= $max)><x-ico name="plus" /></button>
                         </div>
                         <span class="hint" style="margin:0">
                             @if ($complet)
                                 <strong style="color:var(--err)">Complet</strong>
                             @else
-                                Max {{ $this->maxParCommande }} par commande · {{ $this->restant }} disponible{{ $this->restant > 1 ? 's' : '' }}
+                                {{ $quantite }} passager{{ $quantite > 1 ? 's' : '' }} · max {{ $this->maxParCommande }} par réservation · {{ $this->restant }} place{{ $this->restant > 1 ? 's' : '' }} libre{{ $this->restant > 1 ? 's' : '' }}
                             @endif
                         </span>
                     </div>
+
+                    <ol class="pax-list">
+                        @foreach ($passagers as $i => $nomPax)
+                            <li wire:key="pax-{{ $i }}">
+                                <label class="field">
+                                    <span>{{ $i === 0 ? 'Passager 1 · toi' : 'Passager '.($i + 1).' · invité' }}</span>
+                                    <span class="pax-input">
+                                        <input type="text" wire:model.blur="passagers.{{ $i }}" maxlength="120" autocomplete="{{ $i === 0 ? 'name' : 'off' }}"
+                                               placeholder="{{ $i === 0 ? ($this->nomPayeur() ?: 'Ton nom complet') : 'Nom et prénom' }}">
+                                        @if ($i > 0)
+                                            <button type="button" class="pax-del" wire:click="retirerPassager({{ $i }})" aria-label="Retirer le passager {{ $i + 1 }}"><x-ico name="x" size="18" /></button>
+                                        @endif
+                                    </span>
+                                </label>
+                                @error('passagers.'.$i) <span class="err">{{ $message }}</span> @enderror
+                            </li>
+                        @endforeach
+                    </ol>
+                    @if ($quantite < $max)
+                        <button type="button" class="add-pax" wire:click="increment"><x-ico name="plus" size="18" /> Ajouter un passager</button>
+                    @endif
+                    <p class="hint"><x-ico name="info" size="15" style="vertical-align:-2px" /> Tes invités n’ont pas besoin de compte. Chacun reçoit son propre billet QR{{ $transport ? ', valable pour l’aller et le retour' : '' }}.</p>
                 </fieldset>
 
                 @guest
                     <div class="ident">
-                    <fieldset>
-                        <legend><span class="num">{{ $n++ }}</span> Tes coordonnées</legend>
-                        <div class="seg" role="tablist">
-                            <button type="button" role="tab" class="{{ $mode === 'inscription' ? 'on' : '' }}" wire:click="$set('mode', 'inscription')">Je suis nouveau</button>
-                            <button type="button" role="tab" class="{{ $mode === 'connexion' ? 'on' : '' }}" wire:click="$set('mode', 'connexion')">J’ai déjà un compte</button>
-                        </div>
+                        <fieldset>
+                            <legend><span class="num">{{ $n++ }}</span> Ton compte</legend>
+                            <div class="seg" role="tablist">
+                                <button type="button" role="tab" class="{{ $mode === 'inscription' ? 'on' : '' }}" wire:click="$set('mode', 'inscription')">Je suis nouveau</button>
+                                <button type="button" role="tab" class="{{ $mode === 'connexion' ? 'on' : '' }}" wire:click="$set('mode', 'connexion')">J’ai déjà un compte</button>
+                            </div>
 
-                        @if ($mode === 'inscription')
-                            <p class="hint" style="margin:0 0 12px">Ton compte est créé en même temps : tu retrouveras tes billets dans « Mes réservations ».</p>
-                            <div class="grid2">
-                                <label class="field">Nom complet
-                                    <input type="text" wire:model.blur="nom" autocomplete="name" placeholder="Awa Koné">
-                                    @error('nom') <span class="err">{{ $message }}</span> @enderror
-                                </label>
-                                <label class="field">Téléphone (WhatsApp)
-                                    <input type="tel" wire:model.blur="tel" inputmode="tel" autocomplete="tel" placeholder="07 00 00 00 00">
-                                    @error('tel') <span class="err">{{ $message }}</span> @enderror
-                                </label>
-                                <label class="field">E-mail
-                                    <input type="email" wire:model.blur="email" autocomplete="email" placeholder="awa@exemple.com">
-                                    @error('email') <span class="err">{{ $message }}</span> @enderror
-                                </label>
-                                <label class="field">Mot de passe
-                                    <input type="password" wire:model="password" autocomplete="new-password" placeholder="8 caractères minimum">
-                                    @error('password') <span class="err">{{ $message }}</span> @enderror
-                                </label>
-                            </div>
-                        @else
-                            <div class="grid2">
-                                <label class="field">E-mail
-                                    <input type="email" wire:model.blur="email" autocomplete="username">
-                                    @error('email') <span class="err">{{ $message }}</span> @enderror
-                                </label>
-                                <label class="field">Mot de passe
-                                    <input type="password" wire:model="password" autocomplete="current-password">
-                                    @error('password') <span class="err">{{ $message }}</span> @enderror
-                                </label>
-                            </div>
-                            <a class="hint" href="{{ route('password.request') }}">Mot de passe oublié ?</a>
-                        @endif
-                    </fieldset>
+                            @if ($mode === 'inscription')
+                                <p class="hint" style="margin:0 0 14px">Un compte est nécessaire pour retrouver tes billets. Il est créé en même temps que ta réservation.</p>
+                                <div class="grid2">
+                                    <label class="field">Nom complet
+                                        <input type="text" wire:model.blur="nom" autocomplete="name" placeholder="Awa Koné">
+                                        @error('nom') <span class="err">{{ $message }}</span> @enderror
+                                    </label>
+                                    <label class="field">Téléphone (WhatsApp)
+                                        <input type="tel" wire:model.blur="tel" inputmode="tel" autocomplete="tel" placeholder="07 00 00 00 00">
+                                        @error('tel') <span class="err">{{ $message }}</span> @enderror
+                                    </label>
+                                    <label class="field">E-mail
+                                        <input type="email" wire:model.blur="email" autocomplete="email" placeholder="awa@exemple.com">
+                                        @error('email') <span class="err">{{ $message }}</span> @enderror
+                                    </label>
+                                    <label class="field">Mot de passe
+                                        <input type="password" wire:model="password" autocomplete="new-password" placeholder="8 caractères minimum">
+                                        @error('password') <span class="err">{{ $message }}</span> @enderror
+                                    </label>
+                                </div>
+                            @else
+                                <div class="grid2">
+                                    <label class="field">E-mail
+                                        <input type="email" wire:model.blur="email" autocomplete="username">
+                                        @error('email') <span class="err">{{ $message }}</span> @enderror
+                                    </label>
+                                    <label class="field">Mot de passe
+                                        <input type="password" wire:model="password" autocomplete="current-password">
+                                        @error('password') <span class="err">{{ $message }}</span> @enderror
+                                    </label>
+                                </div>
+                                <a class="hint" href="{{ route('password.request') }}">Mot de passe oublié ?</a>
+                            @endif
+                        </fieldset>
                     </div>
                 @endguest
             </div>
 
             {{-- Récapitulatif --}}
             <aside class="side">
-                <div class="ticket recap" aria-label="Récapitulatif">
-                    <div class="top">
-                        <div class="tag">{{ $canal === 'transport' ? 'Transport aller-retour' : 'Billet d’entrée' }}</div>
-                        <div class="zone">{{ $evt->titre }}</div>
-                        <div class="who">{{ $evt->debut_at->locale('fr')->translatedFormat('D j M') }} · {{ $evt->lieu }}</div>
+                <div class="recap panel">
+                    <h3 class="recap-title">Ton trajet</h3>
+                    @if ($transport && $depart)
+                        <ol class="legs-list">
+                            <li>
+                                <span class="leg-tag">Aller</span>
+                                <div>
+                                    <b>{{ $depart->depart_at->locale('fr')->translatedFormat('D j M') }} · {{ $tarif?->heure() ?? $depart->depart_at->format('H\hi') }}</b>
+                                    <small>{{ $tarif?->zone?->nom ?? 'Ton arrêt' }}{{ $tarif?->point_rdv ? ' ('.$tarif->point_rdv.')' : '' }} → {{ $evt->lieu }}</small>
+                                </div>
+                            </li>
+                            <li>
+                                <span class="leg-tag ret">Retour</span>
+                                <div>
+                                    <b>{{ $depart->retour_at ? $depart->retour_at->locale('fr')->translatedFormat('D j M · H\hi') : 'Après l’événement' }}</b>
+                                    <small>{{ $evt->lieu }} → {{ $tarif?->zone?->nom ?? 'ton arrêt' }}</small>
+                                </div>
+                            </li>
+                        </ol>
+                    @elseif (! $transport)
+                        <p class="hint" style="margin:0 0 8px">{{ $this->typeBillet?->nom }} · {{ $evt->debut_at->locale('fr')->translatedFormat('D j M · H\hi') }}</p>
+                    @endif
+
+                    <div class="recap-lines">
+                        <div><span>{{ $quantite }} × {{ number_format($prix, 0, ',', ' ') }} F</span><span>{{ number_format($prix * $quantite, 0, ',', ' ') }} F</span></div>
+                        <div class="recap-total"><span>Total</span><span>{{ number_format($prix * $quantite, 0, ',', ' ') }} FCFA</span></div>
                     </div>
-                    <div class="perf"></div>
-                    <div class="bot">
-                        @if ($canal === 'transport')
-                            <div class="line"><span>Montée</span><span>{{ $tarif?->zone?->nom ?? '—' }}{{ $tarif?->heure() ? ' · '.$tarif->heure() : '' }}</span></div>
-                            @if ($depart)
-                                <div class="line"><span>Départ</span><span>{{ $depart->depart_at->locale('fr')->translatedFormat('D j M · H\hi') }}</span></div>
-                            @endif
-                        @else
-                            <div class="line"><span>Catégorie</span><span>{{ $this->typeBillet?->nom ?? '—' }}</span></div>
-                        @endif
-                        <div class="line"><span>{{ number_format($prix, 0, ',', ' ') }} F × {{ $quantite }}</span><span>{{ number_format($prix * $quantite, 0, ',', ' ') }} F</span></div>
-                        <div class="total"><span>Total</span><span>{{ number_format($prix * $quantite, 0, ',', ' ') }} FCFA</span></div>
-                    </div>
+
+                    <ul class="reassure">
+                        <li><x-ico name="wallet" size="17" /> Paiement Mobile Money (Wave)</li>
+                        <li><x-ico name="qr" size="17" /> Un billet QR par passager</li>
+                        <li><x-ico name="clock" size="17" /> Places bloquées {{ (int) \App\Models\Setting::get('delai_paiement_min', 30) }} min pour payer</li>
+                    </ul>
                 </div>
-                <ul class="reassure">
-                    <li>✅ Paiement Mobile Money (Wave)</li>
-                    <li>📲 Billet QR code par e-mail et dans « Mes réservations »</li>
-                    <li>⏱️ Places bloquées {{ (int) \App\Models\Setting::get('delai_paiement_min', 30) }} min le temps de payer</li>
-                </ul>
 
                 <div class="bar">
                     <button class="cta" type="submit" @disabled(! $this->open || $prix < 1 || $complet) wire:loading.attr="disabled" wire:target="reserve">
-                        <span wire:loading.remove wire:target="reserve">{{ $complet ? 'Complet' : (auth()->check() ? 'Réserver et payer' : 'Continuer vers le paiement') }}</span>
+                        <span wire:loading.remove wire:target="reserve">{{ $complet ? 'Complet' : 'Réserver et payer' }}</span>
                         <span wire:loading wire:target="reserve">Un instant…</span>
                         <span class="amt">{{ number_format($prix * $quantite, 0, ',', ' ') }} F</span>
                     </button>
@@ -230,32 +265,52 @@
     @endif
 
     <style>
-        .back { display: inline-block; color: var(--muted); text-decoration: none; font-weight: 600; font-size: 14px; margin-bottom: 14px; }
-        .back:hover { color: var(--fg); }
-        .evt-hero { display: grid; gap: 20px; margin-bottom: 24px; }
-        .evt-cover { border-radius: var(--radius); box-shadow: var(--shadow); }
-        @media (min-width: 860px) { .evt-hero { grid-template-columns: 1.1fr 1fr; align-items: center; } }
-        .kicker { font: 600 13px var(--body); text-transform: uppercase; letter-spacing: .06em; color: var(--accent-dark); margin-bottom: 8px; }
-        .lead { color: var(--muted); font-size: 1.05rem; margin: 0 0 12px; }
-        .facts { display: flex; flex-wrap: wrap; gap: 8px; }
-        .facts span { background: var(--surface); border: 1px solid var(--line); padding: 6px 12px; border-radius: 99px; font-size: 14px; font-weight: 500; }
+        .evt-hero { display: grid; gap: 20px; margin-bottom: 26px; }
+        .evt-cover { border-radius: var(--r-lg); box-shadow: var(--shadow); }
+        @media (min-width: 900px) { .evt-hero { grid-template-columns: 1.05fr 1fr; align-items: center; gap: 36px; } }
+        .evt-info h1 { color: var(--fg); }
+        .lead { color: var(--muted); font-size: 1.08rem; margin: 0 0 14px; }
+        .facts { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+        .facts li { display: inline-flex; align-items: center; gap: 7px; background: #fff; border: 1px solid var(--line); padding: 7px 12px; border-radius: 99px; font-size: 14.5px; font-weight: 500; }
+        .facts .ico { color: var(--brand); }
         .desc { margin-top: 14px; }
-        .desc summary { cursor: pointer; font-weight: 600; color: var(--accent-dark); }
+        .desc summary { cursor: pointer; font-weight: 600; color: var(--brand); min-height: 32px; }
         .desc p { color: var(--muted); }
         .booking { display: grid; gap: 20px; align-items: start; }
-        @media (min-width: 900px) { .booking { grid-template-columns: 1.4fr 1fr; } .side { position: sticky; top: 80px; } .side .bar { position: static; background: none; padding: 16px 0 0; } }
-        .canaux { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 22px; }
-        .canal { min-height: 50px; border: 1.5px solid var(--line); border-radius: 14px; background: var(--soft); font: 700 14px var(--display); cursor: pointer; color: var(--fg); }
-        .canal.on { border-color: var(--accent); color: var(--accent-dark); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
-        .seg { display: inline-flex; background: var(--soft); border: 1.5px solid var(--line); border-radius: 12px; padding: 3px; margin-bottom: 12px; }
-        .seg button { border: 0; background: none; padding: 8px 14px; border-radius: 9px; font: 600 14px var(--body); cursor: pointer; color: var(--muted); min-height: 40px; }
-        .seg button.on { background: #fff; color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
-        .ident { padding-top: 20px; border-top: 1px dashed var(--line); }
+        @media (min-width: 960px) { .booking { grid-template-columns: 1.5fr 1fr; } .side { position: sticky; top: 92px; } .side .bar { position: static; background: none; padding: 14px 0 0; } }
+        .seg { display: inline-flex; background: var(--soft); border: 1px solid var(--line); border-radius: 12px; padding: 4px; margin-bottom: 14px; gap: 4px; }
+        .seg button { border: 0; background: none; padding: 9px 14px; border-radius: 9px; font: 500 15px var(--body); cursor: pointer; color: var(--muted); min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .seg button.on { background: #fff; color: var(--brand); font-weight: 600; box-shadow: var(--shadow-sm); }
+        .seg-full { display: grid; grid-template-columns: 1fr 1fr; width: 100%; margin-bottom: 24px; }
+        .step-hint { margin: -4px 0 12px; }
+        .qty-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+        .pax-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+        .pax-list .field { margin-bottom: 10px; }
+        .pax-list .field > span:first-child { color: var(--muted); font-size: 13.5px; }
+        .pax-input { display: flex; gap: 8px; }
+        .pax-del { flex: none; width: 52px; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
+        .pax-del:hover { color: var(--err); border-color: var(--err); }
+        .add-pax { display: inline-flex; align-items: center; gap: 8px; border: 1.5px dashed #b9c6d6; background: none; color: var(--brand); font: 600 15px var(--body); border-radius: 12px; padding: 10px 16px; min-height: 46px; cursor: pointer; width: 100%; justify-content: center; }
+        .add-pax:hover { border-color: var(--brand); background: var(--brand-soft); }
+        .ident { padding-top: 22px; border-top: 1px solid var(--line); }
         .ident fieldset { margin-bottom: 0; }
-        @media (max-width: 899px) {
-            .side .bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 28%); z-index: 20; }
+        .recap-title { color: var(--brand); margin-bottom: 14px; }
+        .legs-list { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 12px; }
+        .legs-list li { display: flex; gap: 12px; align-items: flex-start; }
+        .legs-list b { display: block; text-transform: capitalize; }
+        .legs-list small { color: var(--muted); font-size: 14px; }
+        .leg-tag { flex: none; font: 600 12px var(--body); text-transform: uppercase; letter-spacing: .05em; background: var(--brand); color: #fff; border-radius: 8px; padding: 4px 8px; min-width: 62px; text-align: center; }
+        .leg-tag.ret { background: var(--accent); }
+        .recap-lines { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 6px; }
+        .recap-lines > div { display: flex; justify-content: space-between; color: var(--muted); }
+        .recap-total { color: var(--fg) !important; font-weight: 700; font-size: 1.2rem; padding-top: 6px; }
+        .recap-total span:last-child { color: var(--brand); }
+        .reassure { list-style: none; padding: 14px 0 0; margin: 14px 0 0; border-top: 1px solid var(--line); display: grid; gap: 8px; color: var(--muted); font-size: 14.5px; }
+        .reassure li { display: flex; gap: 8px; align-items: center; }
+        .reassure .ico { color: var(--ok); }
+        @media (max-width: 959px) {
+            .side .bar { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding: 10px 16px 12px; background: linear-gradient(transparent, var(--bg) 26%); z-index: 30; }
+            .evt-page { padding-bottom: 80px; }
         }
-        .reassure { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 6px; color: var(--muted); font-size: 14px; }
-        .empty { text-align: center; padding: 40px 20px; }
     </style>
 </div>

@@ -103,9 +103,15 @@ class ParcoursReservationTest extends TestCase
         $premier = $scan->handle($payee->billets[0]->numero, $controleur);
         $this->assertSame('valide', $premier['statut']);
 
+        // Aller-retour : un second contrôle « aller » est refusé, mais le billet reste valable pour le retour.
         $second = $scan->handle($payee->billets[0]->numero, $controleur);
         $this->assertSame('utilise', $second['statut']);
+        $this->assertSame(BilletStatus::Valide, $payee->billets[0]->fresh()->statut);
+
+        $retour = $scan->handle($payee->billets[0]->numero, $controleur, 'retour');
+        $this->assertSame('valide', $retour['statut']);
         $this->assertSame(BilletStatus::Utilise, $payee->billets[0]->fresh()->statut);
+        $this->assertSame('utilise', $scan->handle($payee->billets[0]->numero, $controleur, 'retour')['statut']);
     }
 
     /**

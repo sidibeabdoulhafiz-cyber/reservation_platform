@@ -55,8 +55,9 @@ class ParcoursPassagerTest extends TestCase
         $this->get(route('evenements.show', $evt))
             ->assertOk()
             ->assertSeeInOrder(['Yopougon', 'Cocody'])
-            ->assertSee('Point principal')
-            ->assertSee('Continuer vers le paiement');
+            ->assertSee('Principal')
+            ->assertSee('Qui voyage ?')
+            ->assertSee('Réserver et payer');
     }
 
     public function test_evenement_brouillon_introuvable(): void

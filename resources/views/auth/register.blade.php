@@ -1,14 +1,14 @@
 <x-guest-layout>
     <header class="hero" style="margin-bottom:16px">
-        <h1>Inscription</h1>
-        <p>Un compte pour réserver, payer et recevoir vos billets.</p>
+        <h1>Crée ton compte</h1>
+        <p>Il te servira à réserver, payer et retrouver tes billets.</p>
     </header>
 
     <form method="POST" action="{{ route('register') }}">
         @csrf
 
         <label>
-            Nom
+            Nom complet
             <input id="name" type="text" name="name" value="{{ old('name') }}" required autofocus autocomplete="name">
         </label>
         <x-input-error :messages="$errors->get('name')" class="err" />
@@ -27,7 +27,7 @@
 
         <label>
             Mot de passe
-            <input id="password" type="password" name="password" required autocomplete="new-password">
+            <input id="password" type="password" name="password" required autocomplete="new-password" placeholder="8 caractères minimum">
         </label>
         <x-input-error :messages="$errors->get('password')" class="err" />
 
@@ -39,7 +39,5 @@
         <button class="cta" type="submit"><span>Créer mon compte</span></button>
     </form>
 
-    <p class="hint" style="margin-top:12px">
-        <a href="{{ route('login') }}">J’ai déjà un compte</a>
-    </p>
+    <p class="auth-alt">Déjà un compte ? <a href="{{ route('login') }}">Se connecter</a></p>
 </x-guest-layout>

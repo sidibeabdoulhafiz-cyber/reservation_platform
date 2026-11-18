@@ -10,7 +10,7 @@
 <article {{ $attributes->merge(['class' => 'billet-card']) }}>
     <div class="ticket">
         <div class="top">
-            <div class="tag">{{ $billet->depart ? 'CotaTrans · Transport' : 'CotaTrans · Entrée' }}</div>
+            <div class="tag">{{ $billet->depart ? 'CotaTrans · Aller-retour' : 'CotaTrans · Entrée' }}</div>
             <div class="zone">{{ $evt?->titre ?? 'Billet' }}</div>
             <div class="who">{{ $evt?->debut_at?->locale('fr')->translatedFormat('l j F · H\hi') }} · {{ $evt?->lieu }}</div>
         </div>
@@ -26,11 +26,20 @@
             <dl class="infos">
                 <div><dt>Passager</dt><dd>{{ $billet->nom_passager ?: 'Passager' }}</dd></div>
                 @if ($billet->depart)
+                    <div class="legs" aria-label="Contrôles">
+                        <span @class(['leg', 'done' => $billet->aller_scanne_at])>@if ($billet->aller_scanne_at)<x-ico name="check" size="14" />@endif Aller{{ $billet->aller_scanne_at ? ' · '.$billet->aller_scanne_at->format('H\hi') : '' }}</span>
+                        <span @class(['leg', 'done' => $billet->retour_scanne_at])>@if ($billet->retour_scanne_at)<x-ico name="check" size="14" />@endif Retour{{ $billet->retour_scanne_at ? ' · '.$billet->retour_scanne_at->format('H\hi') : '' }}</span>
+                    </div>
+                @endif
+                @if ($billet->depart)
                     <div><dt>Montée</dt><dd>{{ $reservation?->zone?->nom ?? '—' }}@if ($arret?->heure()) · {{ $arret->heure() }}@endif</dd></div>
                     @if ($arret?->point_rdv)
                         <div><dt>Point de RDV</dt><dd>{{ $arret->point_rdv }}</dd></div>
                     @endif
                     <div><dt>Départ</dt><dd>{{ $billet->depart->depart_at->locale('fr')->translatedFormat('D j M · H\hi') }}</dd></div>
+                    @if ($billet->depart->retour_at)
+                        <div><dt>Retour</dt><dd>{{ $billet->depart->retour_at->locale('fr')->translatedFormat('D j M · H\hi') }}</dd></div>
+                    @endif
                     @if ($billet->siege)
                         <div><dt>Siège</dt><dd>{{ $billet->siege }}</dd></div>
                     @endif

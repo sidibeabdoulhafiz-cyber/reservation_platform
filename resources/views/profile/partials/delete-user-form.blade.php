@@ -1,6 +1,6 @@
 <section>
     <h2>Désactiver le compte</h2>
-    <p class="hint">Le compte reste dans l’historique comptable. Vous ne pourrez plus réserver.</p>
+    <p class="hint">Tes réservations restent dans l’historique, mais tu ne pourras plus te connecter ni réserver.</p>
 
     <form method="post" action="{{ route('profile.destroy') }}" style="margin-top:12px">
         @csrf
@@ -12,7 +12,7 @@
         </label>
         <x-input-error :messages="$errors->userDeletion->get('password')" class="err" />
 
-        <button class="cta" type="submit" style="margin-top:12px;background:#b42318">
+        <button class="cta" type="submit" style="margin-top:12px">
             <span>Désactiver mon compte</span>
         </button>
     </form>

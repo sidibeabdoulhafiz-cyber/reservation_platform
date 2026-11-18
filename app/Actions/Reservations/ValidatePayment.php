@@ -117,13 +117,15 @@ class ValidatePayment
             }
         }
 
+        $noms = $reservation->nomsPassagers();
+
         for ($i = 0; $i < $reservation->quantite; $i++) {
             $reservation->billets()->create([
                 'numero' => Codes::billet($prefixe),
                 'depart_id' => $reservation->depart_id,
                 'type_billet_id' => $reservation->type_billet_id,
                 'siege' => $sieges[$i] ?? null,
-                'nom_passager' => $reservation->user?->name,
+                'nom_passager' => $noms[$i] ?? $reservation->user?->name,
                 'statut' => BilletStatus::Valide,
             ]);
         }

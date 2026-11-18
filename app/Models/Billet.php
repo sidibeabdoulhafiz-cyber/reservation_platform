@@ -11,6 +11,7 @@ class Billet extends Model
     protected $fillable = [
         'reservation_id', 'numero', 'depart_id', 'type_billet_id',
         'siege', 'nom_passager', 'statut', 'utilise_at', 'scanne_par',
+        'aller_scanne_at', 'aller_scanne_par', 'retour_scanne_at', 'retour_scanne_par',
     ];
 
     protected function casts(): array
@@ -19,6 +20,8 @@ class Billet extends Model
             'statut' => BilletStatus::class,
             'siege' => 'integer',
             'utilise_at' => 'datetime',
+            'aller_scanne_at' => 'datetime',
+            'retour_scanne_at' => 'datetime',
         ];
     }
 

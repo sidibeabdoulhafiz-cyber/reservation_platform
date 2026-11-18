@@ -12,7 +12,7 @@ class Reservation extends Model
 {
     protected $fillable = [
         'ref', 'user_id', 'type', 'depart_id', 'zone_id', 'type_billet_id',
-        'quantite', 'prix_unitaire', 'montant', 'statut', 'expire_at',
+        'quantite', 'passagers', 'prix_unitaire', 'montant', 'statut', 'expire_at',
     ];
 
     protected function casts(): array
@@ -21,10 +21,30 @@ class Reservation extends Model
             'type' => ReservationType::class,
             'statut' => ReservationStatus::class,
             'quantite' => 'integer',
+            'passagers' => 'array',
             'prix_unitaire' => 'integer',
             'montant' => 'integer',
             'expire_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Noms des passagers, un par place. Les noms manquants sont complétés par le nom du payeur
+     * (passager 1) ou « Passager N ».
+     *
+     * @return list<string>
+     */
+    public function nomsPassagers(): array
+    {
+        $noms = array_values(array_map(fn ($n) => trim((string) $n), (array) ($this->passagers ?? [])));
+        $payeur = $this->user?->name ?? 'Passager 1';
+
+        $liste = [];
+        for ($i = 0; $i < (int) $this->quantite; $i++) {
+            $liste[] = ($noms[$i] ?? '') !== '' ? $noms[$i] : ($i === 0 ? $payeur : 'Passager '.($i + 1));
+        }
+
+        return $liste;
     }
 
     public function getRouteKeyName(): string

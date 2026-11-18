@@ -14,6 +14,9 @@ class Scanner extends Component
 {
     public string $numero = '';
 
+    /** Sens du contrôle : « aller » (vers l'événement) ou « retour ». */
+    public string $sens = 'aller';
+
     public ?string $statut = null;
 
     public ?string $message = null;
@@ -33,7 +36,7 @@ class Scanner extends Component
             'numero.required' => 'Scannez ou saisissez le numéro du billet.',
         ]);
 
-        $resultat = $scan->handle($this->numero, Auth::user());
+        $resultat = $scan->handle($this->numero, Auth::user(), $this->sens);
 
         $this->statut = $resultat['statut'];
         $this->message = $resultat['message'];
@@ -43,7 +46,20 @@ class Scanner extends Component
             'siege' => $billet->siege,
             'passager' => $billet->nom_passager,
             'evenement' => $billet->depart?->evenement?->titre ?? $billet->typeBillet?->evenement?->titre,
+            'arret' => $billet->reservation?->zone?->nom,
+            'aller' => $billet->aller_scanne_at?->format('H:i'),
+            'retour' => $billet->retour_scanne_at?->format('H:i'),
+            'sens' => $resultat['sens'],
         ] : null;
+        $this->numero = '';
+    }
+
+    public function updatedSens(): void
+    {
+        if (! in_array($this->sens, ScanBillet::SENS, true)) {
+            $this->sens = 'aller';
+        }
+        $this->reset('statut', 'message', 'detail');
     }
 
     public function render()
