@@ -360,6 +360,20 @@
             .trajet.compact { gap: 8px; }
             @media (min-width: 640px) { .trajet:not(.compact) { grid-template-columns: 1fr 1fr; } }
 
+        /* Partage */
+        .partage { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; }
+        .partage-lbl { font-weight: 600; font-size: 14.5px; color: var(--muted); margin-right: 2px; }
+        .sh { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 8px 14px; border-radius: 99px; border: 1.5px solid var(--line); background: #fff; color: var(--fg); font: 600 14px var(--body); text-decoration: none; cursor: pointer; transition: transform .15s, background .15s, color .15s, border-color .15s; }
+        .sh:hover { transform: translateY(-1px); }
+        .sh-wa { color: #128c4a; }
+        .sh-wa:hover { background: #25d366; border-color: #25d366; color: #fff; }
+        .sh-fb { color: #1877f2; }
+        .sh-fb:hover { background: #1877f2; border-color: #1877f2; color: #fff; }
+        .sh-nat:hover, .sh-cp:hover { border-color: var(--brand); color: var(--brand); }
+        .partage.compact .sh span { display: none; }
+        .partage.compact .sh { padding: 8px; width: 40px; justify-content: center; }
+        @media (max-width: 480px) { .partage .sh-cp span, .partage .sh-nat span { display: none; } }
+
         .note { margin: 0 0 12px; }
         .note-ok { color: var(--ok); }
         .barre { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
@@ -403,6 +417,15 @@
         .socials { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
         .socials a { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.08); color: #fff; transition: background .2s, transform .2s; }
         .socials a:hover { background: var(--accent); transform: translateY(-2px); }
+.wa-float { position: fixed; right: 18px; bottom: calc(18px + var(--tabbar-h) + env(safe-area-inset-bottom)); z-index: 50; width: 58px; height: 58px; border-radius: 50%; background: #25d366; color: #fff; display: grid; place-items: center; box-shadow: 0 8px 24px rgba(37, 211, 102, .45); transition: transform .2s; animation: wa-in .5s cubic-bezier(.2,1.4,.4,1) .8s both; }
+        .wa-float:hover { transform: scale(1.07); }
+        .wa-float::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: #25d366; z-index: -1; animation: wa-pulse 2.4s ease-out 2s 3; }
+        .wa-tip { position: absolute; right: 70px; white-space: nowrap; background: #fff; color: var(--fg); font: 600 14px var(--body); padding: 8px 12px; border-radius: 10px; box-shadow: var(--shadow); opacity: 0; transform: translateX(6px); transition: opacity .2s, transform .2s; pointer-events: none; }
+        .wa-float:hover .wa-tip { opacity: 1; transform: none; }
+        @keyframes wa-in { from { transform: scale(0); } to { transform: scale(1); } }
+        @keyframes wa-pulse { 0% { transform: scale(1); opacity: .6; } 100% { transform: scale(1.8); opacity: 0; } }
+        .evt-page ~ .wa-float, body:has(.side .bar) .wa-float { bottom: calc(92px + var(--tabbar-h) + env(safe-area-inset-bottom)); }
+        @media (min-width: 960px) { body:has(.side .bar) .wa-float { bottom: 24px; } }
         .cookie { position: fixed; left: 16px; right: 16px; bottom: calc(16px + var(--tabbar-h) + env(safe-area-inset-bottom)); z-index: 60; max-width: 560px; margin-left: auto; background: #fff; border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow-lg); padding: 16px 18px; font-size: 14.5px; }
         .cookie p { margin: 0 0 12px; color: var(--muted); }
         .cookie b { color: var(--fg); }
@@ -475,6 +498,10 @@
         <div class="wrap">
             @if ($message = \App\Models\Setting::get('message_global'))
                 <div class="alert alert-warn global-msg"><x-ico name="info" />{{ $message }}</div>
+            @endif
+
+            @if (session('status') && request()->routeIs('home'))
+                <div class="alert alert-ok" role="status" style="margin-top:16px"><x-ico name="check-circle" /> {{ session('status') }}</div>
             @endif
 
             {{ $slot }}
@@ -561,6 +588,18 @@
                 <button type="button" class="btn btn-sm" @click="decider('oui')">Accepter</button>
             </div>
         </div>
+    @endif
+
+    @php
+        $waNumero = preg_replace('/\D/', '', (string) \App\Models\Setting::get('whatsapp_numero'));
+        $waTexte = \App\Models\Setting::get('whatsapp_message') ?: 'Bonjour CotaTrans, j’ai une question.';
+    @endphp
+    @if (strlen($waNumero) >= 8 && ! request()->routeIs('controle.*'))
+        <a href="https://wa.me/{{ $waNumero }}?text={{ rawurlencode($waTexte.(request()->routeIs('evenements.show') ? ' ('.url()->current().')' : '')) }}"
+           class="wa-float noprint" target="_blank" rel="noopener" aria-label="Nous écrire sur WhatsApp" title="Une question ? Écris-nous sur WhatsApp">
+            <x-social name="whatsapp" size="30" />
+            <span class="wa-tip">Une question ?</span>
+        </a>
     @endif
 
     {{-- Barre d'onglets mobile --}}

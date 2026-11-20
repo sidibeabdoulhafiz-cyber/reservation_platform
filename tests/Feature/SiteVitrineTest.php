@@ -137,4 +137,43 @@ class SiteVitrineTest extends TestCase
             ->assertHasErrors(['nom', 'tel', 'email', 'password'])
             ->assertDispatched('attirer-inscription');
     }
+
+    public function test_bouton_whatsapp_flottant_selon_le_reglage(): void
+    {
+        $this->get('/')->assertOk()->assertDontSee('class="wa-float', false);
+
+        Setting::set('whatsapp_numero', '+225 07 00 11 22 33');
+        $this->get('/')->assertOk()
+            ->assertSee('class="wa-float', false)
+            ->assertSee('https://wa.me/2250700112233', false);
+    }
+
+    public function test_reglage_numero_whatsapp_dans_l_admin(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'actif' => true]);
+        $this->actingAs($admin);
+
+        Livewire::test(Settings::class)
+            ->set('data.whatsapp_numero', 'pas un numéro')
+            ->call('save')
+            ->assertHasErrors(['data.whatsapp_numero']);
+
+        Livewire::test(Settings::class)
+            ->set('data.wave_link', 'https://pay.wave.com/m/M_test/c/ci/')
+            ->set('data.whatsapp_numero', '+225 07 00 11 22 33')
+            ->call('save')
+            ->assertHasNoErrors();
+        $this->assertSame('+225 07 00 11 22 33', Setting::get('whatsapp_numero'));
+    }
+
+    public function test_partage_d_un_evenement_whatsapp_et_facebook(): void
+    {
+        $evt = Evenement::create(['titre' => 'Concert Himra', 'slug' => 'concert-himra', 'lieu' => 'Ebimpé', 'ville' => 'Abidjan', 'debut_at' => now()->addDays(10), 'statut' => 'publie']);
+        $url = rawurlencode(route('evenements.show', $evt));
+
+        $this->get(route('evenements.show', $evt))->assertOk()
+            ->assertSee('https://www.facebook.com/sharer/sharer.php?u='.$url, false)
+            ->assertSee('https://wa.me/?text=', false)
+            ->assertSee($url, false);
+    }
 }

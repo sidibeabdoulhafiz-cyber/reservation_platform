@@ -40,7 +40,7 @@
         @media (min-width: 860px) { .profil-grid { grid-template-columns: 1fr 1fr; align-items: start; } }
         .profil h2 { font-size: 1.2rem; color: var(--brand); margin-bottom: 4px; }
         .profil .cta { justify-content: center; }
-        .danger-zone h2 { color: var(--err); }
+        .danger-zone h2 { color: var(--brand); }
         .danger-zone .cta { background: var(--err) !important; max-width: 320px; }
         .logout-mobile { display: none; margin-top: 18px; }
         @media (max-width: 860px) { .logout-mobile { display: block; } }

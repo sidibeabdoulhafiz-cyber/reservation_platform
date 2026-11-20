@@ -250,19 +250,10 @@ class ParcoursPassagerTest extends TestCase
         $section = $dom->getElementById('comment-ca-marche');
         $this->assertNotNull($section, 'La section "Comment ça marche" doit exister');
 
-        $stepsInteractive = null;
-        foreach ($section->getElementsByTagName('div') as $div) {
-            if ($div->hasAttribute('x-data') && str_contains(' '.$div->getAttribute('class').' ', ' how ')) {
-                $stepsInteractive = $div;
-                break;
-            }
-        }
-        $this->assertNotNull($stepsInteractive, 'Le conteneur interactif (.how) doit avoir x-data');
-
-        $xdata = $stepsInteractive->getAttribute('x-data');
-        $this->assertStringNotContainsString('"', $xdata, 'Pas de guillemets doubles dans x-data');
-        $this->assertStringContainsString('aller(', $xdata);
-        $this->assertSame(4, $section->getElementsByTagName('ol')->item(0)?->getElementsByTagName('button')->length);
+        // Le trajet en 4 arrêts : léger, sans minuterie JS ni maquette de téléphone
+        $this->assertSame(4, $section->getElementsByTagName('ol')->item(0)?->getElementsByTagName('li')->length);
+        $this->assertStringContainsString('rt-bus', $html);
+        $this->assertStringNotContainsString('class="phone"', $html);
     }
 
     /** @return array{0: Evenement, 1: Depart, 2: Zone, 3: Zone} */

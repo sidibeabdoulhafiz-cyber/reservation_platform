@@ -179,6 +179,14 @@
             @endforeach
         </div>
 
+        @if ($evt)
+            <div class="panel noprint invite">
+                <h3>Tes amis y vont aussi ?</h3>
+                <p class="hint" style="margin:0">Partage l’événement : ils réservent leur place dans le même car.</p>
+                <x-partage :url="route('evenements.show', $evt)" titre=""
+                    :texte="'J’ai réservé mon aller-retour pour '.$evt->titre.' avec CotaTrans 🚌 Réserve ta place :'" />
+            </div>
+        @endif
         @if ($evt?->lien_whatsapp)
             <p class="hint noprint" style="text-align:center;margin-top:16px">Le groupe WhatsApp est facultatif : infos de dernière minute et prochains événements.</p>
         @endif
@@ -242,5 +250,7 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
         .billets { display: grid; gap: 18px; }
+        .invite { margin-top: 18px; text-align: center; }
+        .invite .partage { justify-content: center; }
     </style>
 </div>

@@ -140,86 +140,34 @@
         </div>
     </section>
 
-    {{-- 4. Fonctionnement (interactif, statique pour Livewire) --}}
+    {{-- 4. Fonctionnement : le trajet en 4 arrêts (CSS pur, se joue à l'apparition) --}}
     <div wire:ignore>
     <section id="comment-ca-marche" class="bleed sec-white">
         <div class="in">
             <h2 class="sec-title" data-anim>Comment ça marche ?</h2>
-            <p class="sec-lead" data-anim>Quatre étapes, deux minutes. Touche une étape pour la voir en action.</p>
+            <p class="sec-lead" data-anim>De ton canapé jusqu’à l’événement : 4 arrêts, 2 minutes.</p>
 
-            <div class="how" x-data="{
-                    etape: 0, total: 4, pause: false, t: null, cycle: 0,
-                    init() {
-                        const io = new IntersectionObserver(([e]) => { e.isIntersecting ? this.lancer() : this.arreter(); }, { threshold: .35 });
-                        io.observe(this.$el);
-                    },
-                    lancer() { this.arreter(); this.t = setInterval(() => { if (! this.pause) this.aller((this.etape + 1) % this.total, false); }, 5000); },
-                    arreter() { clearInterval(this.t); },
-                    aller(i, manuel = true) { this.etape = i; this.cycle++; if (manuel) this.lancer(); }
-                 }" @mouseenter="pause = true" @mouseleave="pause = false" @focusin="pause = true" @focusout="pause = false">
-
-                <ol class="how-steps" role="tablist" aria-label="Étapes">
+            <div class="trajet-how" data-anim>
+                <div class="rt-road" aria-hidden="true"><i class="rt-fill"></i><span class="rt-bus"><x-ico name="bus" size="22" /></span></div>
+                <ol class="rt-stops">
                     @foreach ([
-                        ['search', 'Choisis ton événement', 'Concert, festival, match : cherche par nom ou par lieu, filtre par date.'],
-                        ['pin', 'Ton arrêt et tes passagers', 'Sélectionne l’arrêt le plus proche et ajoute tes amis par leur nom, sans compte pour eux.'],
-                        ['wallet', 'Paie en Mobile Money', 'Un seul paiement Wave pour tout le groupe. Envoie la capture, le reçu est lu automatiquement.'],
-                        ['qr', 'Monte à bord', 'Chaque passager reçoit son QR code, scanné à l’aller puis au retour.'],
-                    ] as $i => [$ico, $titre, $texte])
-                        <li role="presentation">
-                            <button type="button" role="tab" :aria-selected="etape === {{ $i }}" :class="{ on: etape === {{ $i }} }" @click="aller({{ $i }})">
-                                <span class="how-n">{{ $i + 1 }}</span>
-                                <span class="how-txt">
-                                    <b>{{ $titre }}</b>
-                                    <small>{{ $texte }}</small>
-                                </span>
-                                <span class="how-bar" aria-hidden="true"><template x-if="etape === {{ $i }}"><i :style="pause ? 'animation-play-state:paused' : ''"></i></template></span>
-                            </button>
+                        ['search', 'Choisis ton événement', 'Concert, festival, match : cherche par nom, lieu ou date.', '30 s'],
+                        ['pin', 'Ton arrêt, tes amis', 'Prends l’arrêt le plus proche et ajoute tes passagers par leur nom.', '1 min'],
+                        ['wallet', 'Paie en Mobile Money', 'Un seul paiement Wave pour tout le groupe, reçu lu automatiquement.', '30 s'],
+                        ['qr', 'Monte à bord', 'Un QR code par passager, scanné à l’aller puis au retour.', 'Jour J'],
+                    ] as $i => [$ico, $titre, $texte, $duree])
+                        <li class="rt-stop" style="--i: {{ $i }}">
+                            <span class="rt-dot"><x-ico :name="$ico" size="22" /></span>
+                            <div class="rt-card">
+                                <span class="rt-n">Arrêt {{ $i + 1 }} <em>{{ $duree }}</em></span>
+                                <b>{{ $titre }}</b>
+                                <p>{{ $texte }}</p>
+                            </div>
                         </li>
                     @endforeach
                 </ol>
-
-                <div class="phone" aria-hidden="true">
-                    <div class="phone-notch"></div>
-                    <div class="screen">
-                        {{-- 1. Recherche --}}
-                        <div class="scr" x-show="etape === 0" x-transition:enter="scr-in" x-transition:enter-start="scr-from">
-                            <div class="m-search"><x-ico name="search" size="16" /> Concert…</div>
-                            <div class="m-card"><div class="m-cover c1"></div><b>Concert au Plateau</b><small>Sam 12 déc · Palais de la Culture</small><div class="m-row"><span>dès <b>2 500 F</b></span><span class="m-btn">Réserver</span></div></div>
-                            <div class="m-card dim"><div class="m-cover c2"></div><b>Journée Rétro</b><small>Dim 20 déc · Grand-Bassam</small></div>
-                        </div>
-                        {{-- 2. Arrêt + passagers --}}
-                        <div class="scr" x-show="etape === 1" x-cloak x-transition:enter="scr-in" x-transition:enter-start="scr-from">
-                            <p class="m-h">Où montes-tu ?</p>
-                            <div class="m-stop on"><span>17h00</span><i></i><b>Yopougon</b></div>
-                            <div class="m-stop"><span>17h20</span><i></i><b>Cocody</b></div>
-                            <div class="m-stop"><span>17h40</span><i></i><b>Marcory</b></div>
-                            <p class="m-h">Qui voyage ?</p>
-                            <div class="m-input">Awa Koné <em>toi</em></div>
-                            <div class="m-input">Moussa Traoré <em>invité</em></div>
-                            <div class="m-add">+ Ajouter un passager</div>
-                        </div>
-                        {{-- 3. Paiement --}}
-                        <div class="scr" x-show="etape === 2" x-cloak x-transition:enter="scr-in" x-transition:enter-start="scr-from">
-                            <p class="m-h">Paiement</p>
-                            <div class="m-wave">Payer <b>5 000 F</b> avec Wave</div>
-                            <div class="m-receipt"><x-ico name="camera" size="18" /> recu-wave.jpg <em>✓</em></div>
-                            <div class="m-read"><span>Montant</span><b>5 000 F</b></div>
-                            <div class="m-read"><span>ID transaction</span><b>T_8K2LMN83PQ</b></div>
-                            <div class="m-ok">Reçu lu automatiquement ✓</div>
-                        </div>
-                        {{-- 4. Billet --}}
-                        <div class="scr" x-show="etape === 3" x-cloak x-transition:enter="scr-in" x-transition:enter-start="scr-from">
-                            <div class="m-ticket">
-                                <small>COTATRANS · ALLER-RETOUR</small>
-                                <b>Concert au Plateau</b>
-                                <div class="m-qr">@for ($k = 0; $k < 49; $k++)<i style="opacity:{{ [1,0,1,1,0,1,0,1,1,0,0,1,1,0,1,0,1,1,0,1,1,1,0,0,1,0,1,1,0,1,1,0,1,0,0,1,1,1,0,1,0,1,1,0,1,0,1,1,0][$k] }}"></i>@endfor</div>
-                                <span>Awa Koné · Yopougon 17h00</span>
-                                <div class="m-legs"><em class="done">Aller ✓</em><em>Retour</em></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
+            <p class="rt-cta" data-anim><a class="btn btn-lg" href="#evenements">Voir les prochains événements <x-ico name="arrow-right" size="18" /></a></p>
         </div>
     </section>
     </div>
@@ -269,6 +217,48 @@
     </div>
 
     <style>
+        /* Comment ça marche : route animée */
+        .trajet-how { position: relative; margin-top: 8px; padding-top: 44px; --dur: 2.6s; }
+        .trajet-how .rt-road { top: 71px; }
+        .rt-road { position: absolute; left: 12.5%; right: 12.5%; top: 27px; height: 6px; border-radius: 6px; background: repeating-linear-gradient(90deg, #d5deea 0 14px, transparent 14px 24px); }
+        .rt-fill { position: absolute; inset: 0; border-radius: 6px; background: linear-gradient(90deg, var(--brand), var(--accent)); transform-origin: left; transition: transform var(--dur) cubic-bezier(.45,.05,.3,1) .3s; }
+        .rt-bus { position: absolute; top: 50%; left: 100%; width: 40px; height: 40px; margin: -62px 0 0 -20px; border-radius: 14px; background: var(--accent); color: #fff; display: grid; place-items: center; box-shadow: 0 8px 18px rgba(251,114,18,.4); transition: left var(--dur) cubic-bezier(.45,.05,.3,1) .3s; z-index: 2; }
+        .js .trajet-how:not(.vu) .rt-fill { transform: scaleX(0); }
+        .js .trajet-how:not(.vu) .rt-bus { left: 0; }
+        .trajet-how.vu .rt-bus { animation: rt-bob 1.4s ease-in-out calc(var(--dur) + .3s) infinite; }
+        @keyframes rt-bob { 50% { transform: translateY(-4px); } }
+        .rt-bus::after { content: ''; position: absolute; left: 50%; bottom: -8px; margin-left: -6px; border: 6px solid transparent; border-top-color: var(--accent); border-bottom: 0; }
+        .rt-stops { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; position: relative; }
+        .rt-stop { display: grid; grid-template-rows: auto 1fr; justify-items: center; text-align: center; gap: 14px; }
+        .rt-card { height: 100%; }
+        .rt-dot { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; background: var(--brand); color: #fff; border: 3px solid var(--brand); position: relative; z-index: 1; transition: background .35s, color .35s, border-color .35s, transform .35s; transition-delay: calc(.3s + var(--i) * var(--dur) / 3); }
+        .js .trajet-how:not(.vu) .rt-dot { background: #fff; color: var(--muted); border-color: #d5deea; transform: scale(.9); }
+        .rt-stop:last-child .rt-dot { background: var(--accent); border-color: var(--accent); }
+        .rt-card { background: #fff; border: 1.5px solid var(--line); border-radius: var(--r); padding: 16px; width: 100%; transition: opacity .5s, transform .5s, border-color .2s, box-shadow .2s; transition-delay: calc(.4s + var(--i) * var(--dur) / 3), calc(.4s + var(--i) * var(--dur) / 3), 0s, 0s; }
+        .js .trajet-how:not(.vu) .rt-card { opacity: .3; transform: translateY(10px); }
+        .rt-stop:hover .rt-card { border-color: var(--brand); box-shadow: var(--shadow); }
+        .rt-n { display: flex; justify-content: center; gap: 8px; align-items: center; font: 700 12.5px var(--body); letter-spacing: .05em; text-transform: uppercase; color: var(--accent); }
+        .rt-n em { font-style: normal; text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--brand); background: var(--brand-soft); padding: 2px 8px; border-radius: 99px; }
+        .rt-card b { display: block; margin: 6px 0 4px; font-size: 1.08rem; color: var(--fg); }
+        .rt-card p { margin: 0; color: var(--muted); font-size: 14.5px; }
+        .rt-cta { text-align: center; margin: 28px 0 0; }
+        @media (max-width: 760px) {
+            .rt-road { left: 27px; right: auto; top: 30px; bottom: 30px; width: 6px; height: auto; background: repeating-linear-gradient(180deg, #d5deea 0 14px, transparent 14px 24px); }
+            .rt-fill { transform-origin: top; background: linear-gradient(180deg, var(--brand), var(--accent)); }
+            .js .trajet-how:not(.vu) .rt-fill { transform: scaleY(0); }
+            .rt-bus { left: 50%; top: 100%; margin: -20px 0 0 -20px; transition: top var(--dur) cubic-bezier(.45,.05,.3,1) .3s, opacity .4s calc(var(--dur) + .3s); opacity: 0; }
+            .rt-bus::after { display: none; }
+            .js .trajet-how:not(.vu) .rt-bus { opacity: 1; }
+            .trajet-how.vu .rt-bus { animation: none; }
+            .js .trajet-how:not(.vu) .rt-bus { left: 50%; top: 0; }
+            .trajet-how { padding-top: 0; }
+            .trajet-how .rt-road { top: 30px; }
+            .rt-stops { grid-template-columns: 1fr; gap: 14px; }
+            .rt-stop { grid-template-rows: auto; grid-template-columns: 60px 1fr; justify-items: start; text-align: left; align-items: start; }
+            .rt-n { justify-content: flex-start; }
+            .rt-card { padding: 14px; }
+        }
+        @media (prefers-reduced-motion: reduce) { .rt-fill, .rt-bus, .rt-dot, .rt-card { transition: none !important; animation: none !important; } }
         .wrap:has(.home) { padding-top: 0; }
 
         /* Bannière */
@@ -334,61 +324,8 @@
         .evt-card:hover .go { background: var(--accent-dark); }
 
         /* Comment ça marche (interactif) */
-        .how { display: grid; gap: 28px; align-items: center; }
-        @media (min-width: 900px) { .how { grid-template-columns: 1.1fr .9fr; gap: 56px; } }
-        .how-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-        .how-steps button { width: 100%; text-align: left; display: grid; grid-template-columns: 44px 1fr; gap: 4px 14px; align-items: start; padding: 16px 18px; border-radius: var(--r); border: 1.5px solid var(--line); background: #fff; cursor: pointer; font: inherit; color: inherit; position: relative; overflow: hidden; transition: border-color .25s, box-shadow .25s, background .25s; }
-        .how-steps button:hover { border-color: #c3cdda; }
-        .how-steps button.on { border-color: var(--brand); box-shadow: var(--shadow); background: linear-gradient(90deg, var(--brand-soft), #fff 60%); }
-        .how-n { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); font: 700 1.1rem var(--display); transition: background .25s, color .25s; }
-        .how-steps button.on .how-n { background: var(--accent); color: #fff; }
-        .how-txt b { display: block; font-size: 1.08rem; color: var(--fg); }
-        .how-txt small { display: block; color: var(--muted); font-size: 14.5px; max-height: 0; opacity: 0; overflow: hidden; transition: max-height .35s ease, opacity .35s ease, margin .35s; }
-        .how-steps button.on .how-txt small { max-height: 80px; opacity: 1; margin-top: 4px; }
-        .how-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; }
-        .how-bar i { display: block; height: 100%; background: var(--accent); transform-origin: left; animation: how-progress 5s linear forwards; }
-        @keyframes how-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-        .phone { position: relative; width: 280px; height: 540px; margin: 0 auto; border-radius: 40px; background: var(--brand-dark); padding: 14px; box-shadow: 0 30px 60px rgba(12,65,115,.28), inset 0 0 0 2px rgba(255,255,255,.08); }
-        .phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 96px; height: 22px; background: var(--brand-dark); border-radius: 0 0 14px 14px; z-index: 2; }
-        .screen { position: relative; height: 100%; border-radius: 28px; background: var(--bg); overflow: hidden; }
-        .scr { position: absolute; inset: 0; padding: 44px 16px 16px; display: grid; gap: 10px; align-content: start; font-size: 13px; }
-        .scr-in { transition: opacity .45s ease, transform .45s ease; }
-        .scr-from { opacity: 0; transform: translateY(16px); }
-        .m-h { margin: 6px 0 0; font-weight: 700; color: var(--brand); font-size: 14px; }
-        .m-search { display: flex; gap: 8px; align-items: center; background: #fff; border: 1.5px solid var(--accent); border-radius: 12px; padding: 10px 12px; color: var(--muted); }
-        .m-card { background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); display: grid; gap: 2px; padding-bottom: 10px; }
-        .m-card.dim { opacity: .6; }
-        .m-card b, .m-card small, .m-row { padding: 0 12px; }
-        .m-card small { color: var(--muted); }
-        .m-cover { height: 70px; margin-bottom: 8px; }
         .c1 { background: linear-gradient(135deg, #1d2b64, #FB7212); }
         .c2 { background: linear-gradient(135deg, #005f73, #f8b500); }
-        .m-row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
-        .m-btn { background: var(--accent); color: #fff; border-radius: 8px; padding: 4px 10px; font-weight: 600; }
-        .m-stop { display: grid; grid-template-columns: 40px 14px 1fr; gap: 8px; align-items: center; background: #fff; border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 10px; }
-        .m-stop span { color: var(--brand); font-weight: 600; }
-        .m-stop i { width: 12px; height: 12px; border-radius: 50%; border: 3px solid #b7c3d3; }
-        .m-stop.on { border-color: var(--accent); background: var(--accent-soft); }
-        .m-stop.on i { border-color: var(--accent); background: var(--accent); }
-        .m-input { display: flex; justify-content: space-between; background: #fff; border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 10px; }
-        .m-input em { font-style: normal; color: var(--muted); font-size: 11.5px; }
-        .m-add { border: 1.5px dashed #b9c6d6; color: var(--brand); border-radius: 10px; padding: 8px; text-align: center; font-weight: 600; }
-        .m-wave { background: #1dc8ff; color: #04263a; border-radius: 12px; padding: 12px; text-align: center; font-weight: 600; }
-        .m-receipt { display: flex; gap: 8px; align-items: center; background: var(--ok-soft); color: var(--ok); border: 1.5px solid #9fd8be; border-radius: 10px; padding: 10px; }
-        .m-receipt em { margin-left: auto; font-style: normal; }
-        .m-read { display: flex; justify-content: space-between; background: #fff; border: 1.5px solid #b7e2cf; border-radius: 10px; padding: 9px 10px; }
-        .m-read span { color: var(--muted); }
-        .m-ok { color: var(--ok); font-weight: 600; text-align: center; }
-        .m-ticket { background: var(--brand); color: #fff; border-radius: 18px; padding: 16px; display: grid; gap: 8px; justify-items: center; text-align: center; margin-top: 10px; }
-        .m-ticket small { color: #ffb07a; font-weight: 600; letter-spacing: .06em; font-size: 10.5px; }
-        .m-ticket b { font-size: 16px; }
-        .m-ticket > span { color: #c9d8ea; }
-        .m-qr { display: grid; grid-template-columns: repeat(7, 18px); gap: 2px; background: #fff; padding: 10px; border-radius: 12px; }
-        .m-qr i { width: 18px; height: 18px; background: var(--brand-dark); border-radius: 2px; }
-        .m-legs { display: flex; gap: 6px; }
-        .m-legs em { font-style: normal; font-size: 11.5px; padding: 3px 9px; border-radius: 99px; background: rgba(255,255,255,.14); }
-        .m-legs em.done { background: var(--ok); }
-        @media (max-width: 899px) { .phone { width: 250px; height: 480px; } }
 
         /* Animations d'entrée et au défilement */
         .hero-text > * { animation: monte .7s cubic-bezier(.2,.7,.2,1) both; }

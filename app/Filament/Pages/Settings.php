@@ -107,7 +107,7 @@ class Settings extends Page
         'reseau_linkedin' => 'LinkedIn',
     ];
 
-    public const TEXTES = ['email_reception', 'ga4_id', 'meta_pixel_id', 'google_site_verification', 'contact_tel'];
+    public const TEXTES = ['email_reception', 'ga4_id', 'meta_pixel_id', 'google_site_verification', 'contact_tel', 'whatsapp_numero', 'whatsapp_message'];
 
     public function form(Schema $schema): Schema
     {
@@ -141,6 +141,12 @@ class Settings extends Page
                         ->placeholder(config('mail.from.address'))
                         ->helperText('Demandes d’organisateurs et formulaire « Nous contacter ». Vide = adresse d’expédition.'),
                     TextInput::make('contact_tel')->label('Téléphone affiché (pied de page)')->tel()->placeholder('+225 07 00 00 00 00'),
+                    TextInput::make('whatsapp_numero')->label('Numéro WhatsApp de contact')->tel()
+                        ->placeholder('+225 07 00 00 00 00')
+                        ->regex('/^\+?[\d\s.-]{8,20}$/')
+                        ->helperText('Affiche le bouton WhatsApp flottant en bas à droite du site. Indicatif pays obligatoire (+225).'),
+                    TextInput::make('whatsapp_message')->label('Message pré-rempli WhatsApp')
+                        ->placeholder('Bonjour CotaTrans, j’ai une question…')->maxLength(200),
                 ])->columnSpanFull(),
 
                 Section::make('Réseaux sociaux')

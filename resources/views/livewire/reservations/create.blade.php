@@ -27,6 +27,8 @@
                     <li><x-ico name="bus" size="17" /> Départ {{ $depart->depart_at->format('H\hi') }}@if ($depart->retour_at) · retour {{ $depart->retour_at->format('H\hi') }}@endif</li>
                 @endif
             </ul>
+            <x-partage :url="route('evenements.show', $evt)" titre="Partager"
+                :texte="'🚌 '.$evt->titre.' · '.$evt->debut_at->locale('fr')->translatedFormat('j F').' à '.$evt->lieu.' : réserve ton aller-retour en car avec CotaTrans'" />
             @if ($evt->description)
                 <details class="desc">
                     <summary>À propos de l’événement</summary>

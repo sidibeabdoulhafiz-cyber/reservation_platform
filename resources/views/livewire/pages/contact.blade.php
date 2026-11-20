@@ -6,8 +6,8 @@
         <ul class="perks">
             <li><x-ico name="clock" /> <span><b>Réponse sous 24 h</b> ouvrées, souvent bien plus vite</span></li>
             <li><x-ico name="ticket" /> <span>Pour une réservation, indique ta <b>référence RES-…</b></span></li>
-            @if ($wa = \App\Models\Setting::get('reseau_whatsapp'))
-                <li><x-ico name="chat" /> <span>Urgent le jour J ? <a href="{{ $wa }}" target="_blank" rel="noopener"><b>WhatsApp</b></a></span></li>
+            @if (strlen($waNum = preg_replace('/\D/', '', (string) \App\Models\Setting::get('whatsapp_numero'))) >= 8)
+                <li><x-ico name="chat" /> <span>Urgent le jour J ? <a href="https://wa.me/{{ $waNum }}" target="_blank" rel="noopener"><b>Écris-nous sur WhatsApp</b></a></span></li>
             @endif
         </ul>
         <p class="hint">Organisateur d’événement ? <a href="{{ route('organisateurs') }}">Utilise plutôt ce formulaire</a>.</p>
