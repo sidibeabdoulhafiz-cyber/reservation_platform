@@ -455,6 +455,8 @@
         @endauth
     </nav>
 
+    {{-- Lecture automatique des reçus (doit être chargé avant Alpine) --}}
+    <script src="{{ asset('js/cotatrans-preuve.js') }}?v={{ @filemtime(public_path('js/cotatrans-preuve.js')) }}"></script>
     @livewireScripts
     @stack('scripts')
 </body>

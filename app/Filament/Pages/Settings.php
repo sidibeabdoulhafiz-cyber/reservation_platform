@@ -7,12 +7,14 @@ use App\Support\Wave;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\HtmlString;
 use Throwable;
 
 class Settings extends Page
@@ -30,6 +32,28 @@ class Settings extends Page
     protected string $view = 'filament.pages.settings';
 
     public ?array $data = [];
+
+    /** Diagnostic lisible de la configuration d'envoi des e-mails. */
+    public static function etatMail(): HtmlString
+    {
+        $mailer = (string) config('mail.default');
+        $de = (string) config('mail.from.address');
+        $ok = fn (string $t) => '<span style="color:#12805c;font-weight:600">✓ '.e($t).'</span>';
+        $ko = fn (string $t) => '<span style="color:#b45309;font-weight:600">⚠ '.e($t).'</span>';
+
+        $lignes = match ($mailer) {
+            'brevo' => [config('mail.mailers.brevo.key') ? $ok('Brevo (API) actif') : $ko('MAIL_MAILER=brevo mais BREVO_API_KEY est vide dans .env')],
+            'smtp' => [str_contains((string) config('mail.mailers.smtp.host'), 'brevo')
+                ? (config('mail.mailers.smtp.password') ? $ok('Brevo (SMTP) actif') : $ko('SMTP Brevo sans mot de passe (MAIL_PASSWORD = clé SMTP Brevo)'))
+                : $ok('SMTP : '.config('mail.mailers.smtp.host'))],
+            'log' => [$ko('Mode test : les e-mails sont écrits dans storage/logs/laravel.log, rien n’est envoyé. Mettez MAIL_MAILER=brevo et BREVO_API_KEY dans .env.')],
+            default => [$ko('Transport : '.$mailer)],
+        };
+        $lignes[] = 'Expéditeur : <strong>'.e($de).'</strong>'.(str_ends_with($de, '@gmail.com') ? ' '.$ko('une adresse Gmail est souvent refusée ou classée en spam : utilisez une adresse de votre domaine validée dans Brevo') : '');
+        $lignes[] = 'Envoi : '.(config('mail.en_file') ? 'en file d’attente (php artisan queue:work requis)' : 'immédiat');
+
+        return new HtmlString(implode('<br>', $lignes));
+    }
 
     protected function getHeaderActions(): array
     {
@@ -83,10 +107,13 @@ class Settings extends Page
                 TextInput::make('message_global')->label('Message affiché sur le site')
                     ->helperText('Facultatif. Visible en haut de toutes les pages.')->maxLength(255),
                 Toggle::make('site_ouvert')->label('Réservations ouvertes'),
+                Placeholder::make('etat_mail')->label('E-mails (Brevo)')
+                    ->content(fn () => static::etatMail())
+                    ->columnSpanFull(),
                 FileUpload::make('hero_image')->label('Photo de la bannière d’accueil')
                     ->helperText('Photo paysage (ex. car de participants devant un stade ou une salle). 1920×1080 conseillé, 5 Mo max. Un dégradé bleu est ajouté à gauche pour la lisibilité du texte.')
                     ->image()->disk('public')->directory('site')->visibility('public')
-                    ->maxSize(5120)->imageEditor()->imageEditorAspectRatioOptions(['16:9', '21:9'])
+                    ->maxSize(5120)->imageCropAspectRatio('16:9')->imageResizeMode('cover')->imageResizeTargetWidth('1920')->imageResizeTargetHeight('1080')
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                     ->columnSpanFull(),
             ])

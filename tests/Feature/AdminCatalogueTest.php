@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Pages\Settings;
 use App\Filament\Resources\Departs\Pages\ManageDeparts;
-use App\Filament\Resources\Evenements\Pages\ManageEvenements;
+use App\Filament\Resources\Evenements\Pages\CreateEvenement;
 use App\Models\Evenement;
 use App\Models\User;
 use App\Models\Zone;
@@ -29,8 +29,8 @@ class AdminCatalogueTest extends TestCase
     {
         Storage::fake('public');
 
-        Livewire::test(ManageEvenements::class)
-            ->callAction('create', [
+        Livewire::test(CreateEvenement::class)
+            ->fillForm([
                 'image_path' => UploadedFile::fake()->image('affiche.jpg', 1600, 900),
                 'titre' => 'Festival Test',
                 'slug' => 'festival-test',
@@ -41,7 +41,8 @@ class AdminCatalogueTest extends TestCase
                 'statut' => 'publie',
                 'lien_whatsapp' => 'https://chat.whatsapp.com/abc',
             ])
-            ->assertHasNoActionErrors();
+            ->call('create')
+            ->assertHasNoFormErrors();
 
         $evt = Evenement::where('slug', 'festival-test')->firstOrFail();
         $this->assertNotNull($evt->image_path);

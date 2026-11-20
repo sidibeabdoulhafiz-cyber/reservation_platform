@@ -151,6 +151,32 @@ class ParcoursPassagerTest extends TestCase
         Mail::assertSent(PaiementRecu::class);
     }
 
+    public function test_le_formulaire_paiement_garde_intact_son_javascript_ocr(): void
+    {
+        [$evt, $depart, $yop] = $this->catalogue();
+        $client = User::factory()->create(['role' => 'client', 'actif' => true]);
+        $r = app(CreateReservation::class)->handle($client, ['type' => 'transport', 'depart_id' => $depart->id, 'zone_id' => $yop->id, 'quantite' => 1]);
+
+        $html = Livewire::actingAs($client)->test(Suivi::class, ['reservation' => $r])->html();
+
+        $dom = new \DOMDocument();
+        @$dom->loadHTML('<?xml encoding="utf-8"?>'.$html);
+
+        $xdata = null;
+        foreach ($dom->getElementsByTagName('form') as $form) {
+            if ($form->hasAttribute('x-data')) {
+                $xdata = $form->getAttribute('x-data');
+                break;
+            }
+        }
+
+        $this->assertNotNull($xdata, 'Le formulaire de paiement n’a plus d’attribut x-data : le JavaScript est tronqué.');
+        $this->assertStringNotContainsString('"', $xdata, 'Un guillemet double dans x-data coupe l’attribut au milieu du code : le code s’affiche en clair et l’OCR est cassé.');
+        $this->assertStringContainsString('retirer() {', $xdata, 'x-data est tronqué : la fonction retirer() (fin du bloc) est absente.');
+        $this->assertStringContainsString('extraireDepuisTexte(text) {', $xdata);
+        $this->assertStringContainsString('Tesseract.createWorker', $xdata);
+    }
+
     public function test_client_peut_annuler_une_reservation_a_payer(): void
     {
         [$evt, $depart, $yop] = $this->catalogue();

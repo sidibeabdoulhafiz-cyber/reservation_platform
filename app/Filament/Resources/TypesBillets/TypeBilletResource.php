@@ -35,9 +35,15 @@ class TypeBilletResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->components([
-            Select::make('evenement_id')->label('Événement')->relationship('evenement', 'titre')->required()->searchable(),
-            TextInput::make('nom')->required(),
+        return $schema->components(static::champs());
+    }
+
+    /** @return array<int, mixed> */
+    public static function champs(bool $avecEvenement = true): array
+    {
+        return [
+            ...($avecEvenement ? [Select::make('evenement_id')->label('Événement')->relationship('evenement', 'titre')->required()->searchable()->preload()] : []),
+            TextInput::make('nom')->label('Catégorie')->placeholder('Ex. Grand public, VIP')->required(),
             Textarea::make('description')->rows(2),
             TextInput::make('prix')->numeric()->minValue(0)->suffix('FCFA')->required(),
             TextInput::make('quota')->numeric()->minValue(1)->required(),
@@ -46,7 +52,7 @@ class TypeBilletResource extends Resource
             DateTimePicker::make('vente_fin_at')->label('Fin de vente'),
             TextInput::make('ordre')->numeric()->default(0),
             Toggle::make('actif')->default(true),
-        ]);
+        ];
     }
 
     public static function table(Table $table): Table

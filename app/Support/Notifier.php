@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Mail\BilletsConfirmes;
 use App\Mail\PaiementRecu;
 use App\Mail\PaiementRefuse;
+use App\Mail\RappelDepart;
 use App\Mail\ReservationCreee;
 use App\Models\Paiement;
 use App\Models\Reservation;
@@ -36,6 +37,11 @@ final class Notifier
     public static function paiementRefuse(Reservation $reservation, string $motif): void
     {
         self::envoyer($reservation, new PaiementRefuse($reservation, $motif));
+    }
+
+    public static function rappelDepart(Reservation $reservation, string $moment): void
+    {
+        self::envoyer($reservation, new RappelDepart($reservation, $moment));
     }
 
     private static function envoyer(Reservation $reservation, Mailable $mail): void

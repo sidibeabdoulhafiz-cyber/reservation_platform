@@ -97,66 +97,58 @@
         </section>
 
         <form class="panel paystep" wire:submit="submitProof"
-              x-data="{
-                  apercu: null, progress: 0, envoi: false,
-                  async choisir(e) {
-                      const f = e.target.files?.[0]; if (!f) return;
-                      this.apercu = URL.createObjectURL(f); this.envoi = true; this.progress = 0;
-                      let fichier = f;
-                      try {
-                          const img = await createImageBitmap(f);
-                          const s = Math.min(1, 1280 / Math.max(img.width, img.height));
-                          const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
-                          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-                          const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.82));
-                          if (blob) fichier = new File([blob], 'recu.jpg', { type: 'image/jpeg' });
-                      } catch (_) {}
-                      $wire.upload('capture', fichier, () => { this.envoi = false; this.progress = 100 }, () => { this.envoi = false }, (ev) => { this.progress = ev.detail.progress });
-                  },
-                  retirer() { this.apercu = null; this.progress = 0; $wire.set('capture', null); this.$refs.file.value = '' }
-              }">
-            <div class="ps-head"><span class="num">2</span><h3>Envoie la preuve de paiement</h3></div>
+              x-data="preuvePaiement({ attendu: {{ (int) $r->montant }}, prix: {{ (int) $r->prix_unitaire }} })">
+            <div class="ps-head"><span class="num">2</span><h3>Envoie la capture du reçu</h3></div>
 
             <label class="drop" :class="{ filled: apercu }">
                 <input type="file" accept="image/*" x-ref="file" @change="choisir($event)">
-                <template x-if="!apercu">
-                    <span class="drop-empty">
-                        <span class="drop-ico" aria-hidden="true"><x-ico name="camera" size="28" /></span>
-                        <b>Ajouter la capture du reçu</b>
-                        <small>Touche ici pour choisir dans ta galerie</small>
+                <span class="drop-empty" x-show="!apercu">
+                    <span class="drop-ico" aria-hidden="true"><x-ico name="camera" size="28" /></span>
+                    <b>Ajouter la capture du reçu Wave</b>
+                    <small>Le montant et l’ID de transaction sont lus automatiquement</small>
+                </span>
+                <span class="drop-filled" x-show="apercu" x-cloak>
+                    <img :src="apercu" alt="Aperçu du reçu">
+                    <span>
+                        <b x-text="envoi ? 'Envoi… ' + progress + '%' : 'Capture ajoutée ✓'"></b>
+                        <small>Touche pour changer d’image</small>
                     </span>
-                </template>
-                <template x-if="apercu">
-                    <span class="drop-filled">
-                        <img :src="apercu" alt="Aperçu du reçu">
-                        <span>
-                            <b x-text="envoi ? 'Envoi… ' + progress + '%' : 'Capture prête ✓'"></b>
-                            <small>Touche pour changer</small>
-                        </span>
-                    </span>
-                </template>
+                </span>
             </label>
             <div class="barre" x-show="envoi" x-cloak><span :style="'width:' + progress + '%'"></span></div>
             @error('capture') <span class="err">{{ $message }}</span> @enderror
 
-            <label class="field" style="margin-top:14px">
-                ID de transaction Wave
-                <input type="text" wire:model="transaction_id" placeholder="Ex. T_ABCD1234EFGH" autocomplete="off" autocapitalize="characters" spellcheck="false">
-                <small class="hint" style="font-weight:400;margin:0">Il apparaît sur le reçu Wave, sous le montant.</small>
-                @error('transaction_id') <span class="err">{{ $message }}</span> @enderror
-            </label>
+            {{-- Lecture automatique --}}
+            <div class="ocr" x-show="etat !== 'vide'" x-cloak aria-live="polite">
+                <div class="ocr-run" x-show="etat === 'lecture'">
+                    <span class="spin" aria-hidden="true"></span>
+                    <span>Lecture du reçu… <strong x-text="lecturePct + '%'"></strong></span>
+                </div>
+                <div class="ocr-ok" x-show="etat === 'lu'"><x-ico name="check-circle" size="18" /> Reçu lu automatiquement. Vérifie les informations ci-dessous.</div>
+                <div class="ocr-warn" x-show="etat === 'partiel' || etat === 'echec'">
+                    <x-ico name="info" size="18" /> <span x-text="message"></span>
+                    <button type="button" class="linklike" @click="relancer()" x-show="etat === 'echec'">Relancer la lecture</button>
+                </div>
+            </div>
 
-            <details class="montant" @if ($errors->has('montant_declare')) open @endif>
-                <summary>Montant payé : <strong class="mono">{{ number_format((int) $montant_declare, 0, ',', ' ') }} F</strong> · modifier si différent</summary>
-                <label class="field" style="margin-top:10px">
-                    Montant exact lu sur le reçu (FCFA)
-                    <input type="number" inputmode="numeric" min="1" step="1" wire:model="montant_declare">
+            <div class="lu-grid">
+                <label class="field">
+                    <span>Montant payé (FCFA) <em class="lu-tag" x-show="montantLu" x-cloak>lu sur le reçu</em></span>
+                    <input type="number" inputmode="numeric" min="1" step="1" wire:model="montant_declare"
+                           :readonly="montantLu" :class="{ 'is-lu': montantLu }" :aria-readonly="montantLu ? 'true' : 'false'">
+                    @error('montant_declare') <span class="err">{{ $message }}</span> @enderror
                 </label>
-            </details>
-            @error('montant_declare') <span class="err">{{ $message }}</span> @enderror
+                <label class="field">
+                    <span>ID de transaction <em class="lu-tag" x-show="idLu" x-cloak>lu sur le reçu</em></span>
+                    <input type="text" wire:model="transaction_id" placeholder="Ex. T_ABCD1234EFGH" autocomplete="off" autocapitalize="characters" spellcheck="false"
+                           :readonly="idLu" :class="{ 'is-lu': idLu }" :aria-readonly="idLu ? 'true' : 'false'">
+                    @error('transaction_id') <span class="err">{{ $message }}</span> @enderror
+                </label>
+            </div>
+            <p class="hint" style="margin-top:0">Montant attendu : <strong>{{ number_format($r->montant, 0, ',', ' ') }} FCFA</strong>. Notre équipe compare toujours ces informations avec la capture.</p>
 
-            <button class="cta center" type="submit" style="margin-top:16px" wire:loading.attr="disabled" wire:target="submitProof,capture" x-bind:disabled="envoi">
-                <span wire:loading.remove wire:target="submitProof">Envoyer la preuve</span>
+            <button class="cta center" type="submit" style="margin-top:12px" wire:loading.attr="disabled" wire:target="submitProof,capture" x-bind:disabled="envoi || etat === 'lecture'">
+                <span wire:loading.remove wire:target="submitProof" x-text="etat === 'lecture' ? 'Lecture du reçu…' : 'Envoyer la preuve'">Envoyer la preuve</span>
                 <span wire:loading wire:target="submitProof">Envoi en cours…</span>
             </button>
         </form>
@@ -235,7 +227,16 @@
         .drop-filled img { width: 64px; height: 84px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
         .drop-filled b { display: block; color: var(--ok); }
         .barre { margin-top: 8px; }
-        .montant summary { cursor: pointer; font-size: 14px; color: var(--muted); }
+        .ocr { margin-top: 12px; border-radius: 12px; font-size: 14.5px; }
+        .ocr > div { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; }
+        .ocr-run { background: var(--brand-soft); color: var(--brand); }
+        .ocr-ok { background: var(--ok-soft); color: var(--ok); }
+        .ocr-warn { background: var(--warn-soft); color: var(--warn); }
+        .spin { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; }
+        .lu-grid { display: grid; gap: 0 14px; margin-top: 14px; }
+        @media (min-width: 520px) { .lu-grid { grid-template-columns: 1fr 1.3fr; } }
+        .lu-tag { font-style: normal; font: 600 11.5px var(--body); background: var(--ok-soft); color: var(--ok); border-radius: 99px; padding: 2px 8px; margin-left: 6px; }
+        .field input.is-lu { background: var(--soft); border-color: #b7e2cf; color: var(--fg); font-weight: 600; cursor: default; }
         .wait { display: flex; gap: 16px; align-items: center; }
         .spinner { width: 36px; height: 36px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--accent); animation: spin 1s linear infinite; flex: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
