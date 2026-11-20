@@ -30,7 +30,8 @@
 
         <div class="in">
             <div class="hero-text">
-                <h1>Zéro stress, zéro retard.</h1>
+                <p class="hero-kicker">Transport événementiel à Abidjan</p>
+                <h1>Zéro stress, zéro retard.<span class="h1-sub">Ton aller-retour en car pour tes événements et sorties.</span></h1>
                 <p>Réserve ton aller-retour en car vers ton concert, ton festival ou ton match. Ramassage près de chez toi, un billet QR par passager.</p>
 
                 <form class="search" role="search" wire:submit="$refresh" onsubmit="document.getElementById('evenements').scrollIntoView()">
@@ -101,7 +102,7 @@
                                 && $evt->typesBillets->filter->enVente()->every(fn ($t) => $t->placesRestantes() === 0);
                             $nbArrets = $evt->departs->flatMap->tarifs->pluck('zone_id')->unique()->count();
                         @endphp
-                        <a class="card evt-card reveal" href="{{ route('evenements.show', $evt) }}" wire:key="evt-{{ $evt->id }}">
+                        <a class="card evt-card enter" style="--i: {{ min($loop->index, 8) }}" href="{{ route('evenements.show', $evt) }}" wire:key="evt-{{ $evt->id }}">
                             <div class="cover-wrap">
                                 <x-evenement-cover :evenement="$evt" :badge="true" :eager="$loop->first" />
                                 @if ($complet)
@@ -139,50 +140,121 @@
         </div>
     </section>
 
-    {{-- 4. Fonctionnement --}}
+    {{-- 4. Fonctionnement (interactif, statique pour Livewire) --}}
+    <div wire:ignore>
     <section id="comment-ca-marche" class="bleed sec-white">
         <div class="in">
-            <h2 class="sec-title">Comment ça marche ?</h2>
-            <p class="sec-lead">Quatre étapes, deux minutes. Aucun appel, aucune file d’attente.</p>
-            <ol class="steps">
-                <li class="reveal"><span class="n">1</span><x-ico name="search" size="26" /><h3>Choisis ton événement</h3><p>Trouve ton concert, ton festival ou ton match dans la liste.</p></li>
-                <li class="reveal"><span class="n">2</span><x-ico name="pin" size="26" /><h3>Ton arrêt, tes passagers</h3><p>Sélectionne l’arrêt le plus proche de chez toi et ajoute tes amis, même sans compte.</p></li>
-                <li class="reveal"><span class="n">3</span><x-ico name="wallet" size="26" /><h3>Paie en Mobile Money</h3><p>Un seul paiement pour tout le groupe, l’aller et le retour.</p></li>
-                <li class="reveal"><span class="n">4</span><x-ico name="qr" size="26" /><h3>Monte à bord</h3><p>Chaque passager reçoit son QR code, contrôlé à l’aller et au retour.</p></li>
-            </ol>
+            <h2 class="sec-title" data-anim>Comment ça marche ?</h2>
+            <p class="sec-lead" data-anim>Quatre étapes, deux minutes. Touche une étape pour la voir en action.</p>
+
+            <div class="how" x-data="{
+                    etape: 0, total: 4, pause: false, t: null, cycle: 0,
+                    init() {
+                        const io = new IntersectionObserver(([e]) => { e.isIntersecting ? this.lancer() : this.arreter(); }, { threshold: .35 });
+                        io.observe(this.$el);
+                    },
+                    lancer() { this.arreter(); this.t = setInterval(() => { if (! this.pause) this.aller((this.etape + 1) % this.total, false); }, 5000); },
+                    arreter() { clearInterval(this.t); },
+                    aller(i, manuel = true) { this.etape = i; this.cycle++; if (manuel) this.lancer(); }
+                 }" @mouseenter="pause = true" @mouseleave="pause = false" @focusin="pause = true" @focusout="pause = false">
+
+                <ol class="how-steps" role="tablist" aria-label="Étapes">
+                    @foreach ([
+                        ['search', 'Choisis ton événement', 'Concert, festival, match : cherche par nom ou par lieu, filtre par date.'],
+                        ['pin', 'Ton arrêt et tes passagers', 'Sélectionne l’arrêt le plus proche et ajoute tes amis par leur nom, sans compte pour eux.'],
+                        ['wallet', 'Paie en Mobile Money', 'Un seul paiement Wave pour tout le groupe. Envoie la capture, le reçu est lu automatiquement.'],
+                        ['qr', 'Monte à bord', 'Chaque passager reçoit son QR code, scanné à l’aller puis au retour.'],
+                    ] as $i => [$ico, $titre, $texte])
+                        <li role="presentation">
+                            <button type="button" role="tab" :aria-selected="etape === {{ $i }}" :class="{ on: etape === {{ $i }} }" @click="aller({{ $i }})">
+                                <span class="how-n">{{ $i + 1 }}</span>
+                                <span class="how-txt">
+                                    <b>{{ $titre }}</b>
+                                    <small>{{ $texte }}</small>
+                                </span>
+                                <span class="how-bar" aria-hidden="true"><template x-if="etape === {{ $i }}"><i :style="pause ? 'animation-play-state:paused' : ''"></i></template></span>
+                            </button>
+                        </li>
+                    @endforeach
+                </ol>
+
+                <div class="phone" aria-hidden="true">
+                    <div class="phone-notch"></div>
+                    <div class="screen">
+                        {{-- 1. Recherche --}}
+                        <div class="scr" x-show="etape === 0" x-transition:enter="scr-in" x-transition:enter-start="scr-from">
+                            <div class="m-search"><x-ico name="search" size="16" /> Concert…</div>
+                            <div class="m-card"><div class="m-cover c1"></div><b>Concert au Plateau</b><small>Sam 12 déc · Palais de la Culture</small><div class="m-row"><span>dès <b>2 500 F</b></span><span class="m-btn">Réserver</span></div></div>
+                            <div class="m-card dim"><div class="m-cover c2"></div><b>Journée Rétro</b><small>Dim 20 déc · Grand-Bassam</small></div>
+                        </div>
+                        {{-- 2. Arrêt + passagers --}}
+                        <div class="scr" x-show="etape === 1" x-cloak x-transition:enter="scr-in" x-transition:enter-start="scr-from">
+                            <p class="m-h">Où montes-tu ?</p>
+                            <div class="m-stop on"><span>17h00</span><i></i><b>Yopougon</b></div>
+                            <div class="m-stop"><span>17h20</span><i></i><b>Cocody</b></div>
+                            <div class="m-stop"><span>17h40</span><i></i><b>Marcory</b></div>
+                            <p class="m-h">Qui voyage ?</p>
+                            <div class="m-input">Awa Koné <em>toi</em></div>
+                            <div class="m-input">Moussa Traoré <em>invité</em></div>
+                            <div class="m-add">+ Ajouter un passager</div>
+                        </div>
+                        {{-- 3. Paiement --}}
+                        <div class="scr" x-show="etape === 2" x-cloak x-transition:enter="scr-in" x-transition:enter-start="scr-from">
+                            <p class="m-h">Paiement</p>
+                            <div class="m-wave">Payer <b>5 000 F</b> avec Wave</div>
+                            <div class="m-receipt"><x-ico name="camera" size="18" /> recu-wave.jpg <em>✓</em></div>
+                            <div class="m-read"><span>Montant</span><b>5 000 F</b></div>
+                            <div class="m-read"><span>ID transaction</span><b>T_8K2LMN83PQ</b></div>
+                            <div class="m-ok">Reçu lu automatiquement ✓</div>
+                        </div>
+                        {{-- 4. Billet --}}
+                        <div class="scr" x-show="etape === 3" x-cloak x-transition:enter="scr-in" x-transition:enter-start="scr-from">
+                            <div class="m-ticket">
+                                <small>COTATRANS · ALLER-RETOUR</small>
+                                <b>Concert au Plateau</b>
+                                <div class="m-qr">@for ($k = 0; $k < 49; $k++)<i style="opacity:{{ [1,0,1,1,0,1,0,1,1,0,0,1,1,0,1,0,1,1,0,1,1,1,0,0,1,0,1,1,0,1,1,0,1,0,0,1,1,1,0,1,0,1,1,0,1,0,1,1,0][$k] }}"></i>@endfor</div>
+                                <span>Awa Koné · Yopougon 17h00</span>
+                                <div class="m-legs"><em class="done">Aller ✓</em><em>Retour</em></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
+    </div>
 
+    <div wire:ignore>
     {{-- 5. Avantages --}}
     <section id="avantages" class="sec">
-        <h2 class="sec-title">Pourquoi CotaTrans ?</h2>
-        <p class="sec-lead">Tu profites de l’événement, on gère le trajet.</p>
+        <h2 class="sec-title" data-anim>Pourquoi CotaTrans ?</h2>
+        <p class="sec-lead" data-anim>Tu profites de l’événement, on gère le trajet.</p>
         <div class="benefits">
-            <div class="benefit reveal"><span class="b-ico"><x-ico name="route" size="24" /></span><h3>Ramassage près de chez toi</h3><p>Un point de rassemblement principal et des arrêts dans les quartiers traversés, avec l’heure de passage.</p></div>
-            <div class="benefit reveal"><span class="b-ico"><x-ico name="bus" size="24" /></span><h3>Retour garanti</h3><p>Fini la chasse au taxi à la sortie : ton car te ramène après l’événement.</p></div>
-            <div class="benefit reveal"><span class="b-ico"><x-ico name="users" size="24" /></span><h3>Pratique en groupe</h3><p>Réserve pour tes amis en une fois. Chacun reçoit son propre billet.</p></div>
-            <div class="benefit reveal"><span class="b-ico"><x-ico name="ticket" size="24" /></span><h3>Prix fixe, sans surprise</h3><p>Le prix affiché comprend l’aller et le retour. Rien à payer à bord.</p></div>
+            <div class="benefit" data-anim><span class="b-ico"><x-ico name="route" size="24" /></span><h3>Ramassage près de chez toi</h3><p>Un point de rassemblement principal et des arrêts dans les quartiers traversés, avec l’heure de passage.</p></div>
+            <div class="benefit" data-anim><span class="b-ico"><x-ico name="bus" size="24" /></span><h3>Retour garanti</h3><p>Fini la chasse au taxi à la sortie : ton car te ramène après l’événement.</p></div>
+            <div class="benefit" data-anim><span class="b-ico"><x-ico name="users" size="24" /></span><h3>Pratique en groupe</h3><p>Réserve pour tes amis en une fois. Chacun reçoit son propre billet.</p></div>
+            <div class="benefit" data-anim><span class="b-ico"><x-ico name="ticket" size="24" /></span><h3>Prix fixe, sans surprise</h3><p>Le prix affiché comprend l’aller et le retour. Rien à payer à bord.</p></div>
         </div>
     </section>
 
     {{-- 6. Sécurité & confiance --}}
     <section class="bleed trust">
         <div class="in">
-            <div class="trust-head">
+            <div class="trust-head" data-anim>
                 <h2>Voyage en toute confiance</h2>
                 <p>Chaque étape est contrôlée, du paiement à la montée dans le car.</p>
             </div>
             <ul class="trust-list">
-                <li class="reveal"><x-ico name="shield" size="26" /><div><b>Paiements vérifiés</b><span>Chaque paiement est contrôlé par notre équipe avant l’émission des billets.</span></div></li>
-                <li class="reveal"><x-ico name="qr" size="26" /><div><b>Billets infalsifiables</b><span>Un QR code unique par passager, scanné à la montée de l’aller et du retour.</span></div></li>
-                <li class="reveal"><x-ico name="users" size="26" /><div><b>Liste des passagers à bord</b><span>L’agent connaît les passagers attendus à chaque arrêt.</span></div></li>
-                <li class="reveal"><x-ico name="headset" size="26" /><div><b>Une équipe joignable</b><span>Une question avant ou pendant le trajet ? On te répond.</span></div></li>
+                <li data-anim><x-ico name="shield" size="26" /><div><b>Paiements vérifiés</b><span>Chaque paiement est contrôlé par notre équipe avant l’émission des billets.</span></div></li>
+                <li data-anim><x-ico name="qr" size="26" /><div><b>Billets infalsifiables</b><span>Un QR code unique par passager, scanné à la montée de l’aller et du retour.</span></div></li>
+                <li data-anim><x-ico name="users" size="26" /><div><b>Liste des passagers à bord</b><span>L’agent connaît les passagers attendus à chaque arrêt.</span></div></li>
+                <li data-anim><x-ico name="headset" size="26" /><div><b>Une équipe joignable</b><span>Une question avant ou pendant le trajet ? On te répond.</span></div></li>
             </ul>
         </div>
     </section>
 
     {{-- 7. Appel à l'action --}}
-    <section class="cta-band reveal">
+    <section class="cta-band" data-anim>
         <div>
             <h2>Prêt pour ton prochain événement ?</h2>
             <p>{{ auth()->check() ? 'Réserve ta place maintenant : les cars se remplissent vite.' : 'Crée ton compte en 30 secondes et réserve ta place, ou celles de tes amis.' }}</p>
@@ -194,6 +266,7 @@
             <a href="#evenements" class="btn btn-lg {{ auth()->check() ? '' : 'btn-ghost' }}">Voir les événements</a>
         </div>
     </section>
+    </div>
 
     <style>
         .wrap:has(.home) { padding-top: 0; }
@@ -204,6 +277,8 @@
         .hero-home .in { position: relative; z-index: 1; padding-top: 88px; padding-bottom: 96px; }
         .hero-text { max-width: 640px; }
         .hero-home h1 { font: 800 clamp(2.3rem, 6.4vw, 4rem)/1.04 var(--display); letter-spacing: -.025em; margin: 0 0 18px; }
+        .hero-kicker { display: inline-block; font: 600 13px var(--body); letter-spacing: .08em; text-transform: uppercase; color: #ffb07a; margin: 0 0 14px !important; }
+        .h1-sub { display: block; font: 600 clamp(1.15rem, 2.6vw, 1.6rem)/1.3 var(--display); letter-spacing: 0; color: #fff; opacity: .92; margin-top: 12px; }
         .hero-home p { font-size: clamp(1.05rem, 2.2vw, 1.25rem); line-height: 1.55; color: #e3ebf5; margin: 0 0 28px; max-width: 54ch; }
         .hero-illu { position: absolute; right: -40px; bottom: 0; width: min(56vw, 640px); height: auto; opacity: .95; }
         @media (max-width: 860px) { .hero-illu { opacity: .22; width: 120vw; right: -30vw; } }
@@ -258,14 +333,72 @@
         .evt-card .go { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: #fff; background: var(--accent); padding: 10px 16px; border-radius: 12px; transition: background .15s; }
         .evt-card:hover .go { background: var(--accent-dark); }
 
-        /* Étapes */
-        .sec-white { background: #fff; padding: 72px 0; border-block: 1px solid var(--line); margin-top: 56px; }
-        .steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); counter-reset: s; }
-        .steps li { position: relative; background: var(--bg); border-radius: var(--r-lg); padding: 26px 22px 22px; border: 1px solid var(--line); }
-        .steps .n { position: absolute; top: 18px; right: 20px; font: 800 2.2rem var(--display); color: var(--brand-soft); line-height: 1; }
-        .steps .ico { color: var(--accent); margin-bottom: 14px; }
-        .steps h3 { color: var(--brand); font-size: 1.15rem; margin: 0 0 6px; }
-        .steps p { margin: 0; color: var(--muted); }
+        /* Comment ça marche (interactif) */
+        .how { display: grid; gap: 28px; align-items: center; }
+        @media (min-width: 900px) { .how { grid-template-columns: 1.1fr .9fr; gap: 56px; } }
+        .how-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+        .how-steps button { width: 100%; text-align: left; display: grid; grid-template-columns: 44px 1fr; gap: 4px 14px; align-items: start; padding: 16px 18px; border-radius: var(--r); border: 1.5px solid var(--line); background: #fff; cursor: pointer; font: inherit; color: inherit; position: relative; overflow: hidden; transition: border-color .25s, box-shadow .25s, background .25s; }
+        .how-steps button:hover { border-color: #c3cdda; }
+        .how-steps button.on { border-color: var(--brand); box-shadow: var(--shadow); background: linear-gradient(90deg, var(--brand-soft), #fff 60%); }
+        .how-n { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); font: 700 1.1rem var(--display); transition: background .25s, color .25s; }
+        .how-steps button.on .how-n { background: var(--accent); color: #fff; }
+        .how-txt b { display: block; font-size: 1.08rem; color: var(--fg); }
+        .how-txt small { display: block; color: var(--muted); font-size: 14.5px; max-height: 0; opacity: 0; overflow: hidden; transition: max-height .35s ease, opacity .35s ease, margin .35s; }
+        .how-steps button.on .how-txt small { max-height: 80px; opacity: 1; margin-top: 4px; }
+        .how-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; }
+        .how-bar i { display: block; height: 100%; background: var(--accent); transform-origin: left; animation: how-progress 5s linear forwards; }
+        @keyframes how-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+        .phone { position: relative; width: 280px; height: 540px; margin: 0 auto; border-radius: 40px; background: var(--brand-dark); padding: 14px; box-shadow: 0 30px 60px rgba(12,65,115,.28), inset 0 0 0 2px rgba(255,255,255,.08); }
+        .phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 96px; height: 22px; background: var(--brand-dark); border-radius: 0 0 14px 14px; z-index: 2; }
+        .screen { position: relative; height: 100%; border-radius: 28px; background: var(--bg); overflow: hidden; }
+        .scr { position: absolute; inset: 0; padding: 44px 16px 16px; display: grid; gap: 10px; align-content: start; font-size: 13px; }
+        .scr-in { transition: opacity .45s ease, transform .45s ease; }
+        .scr-from { opacity: 0; transform: translateY(16px); }
+        .m-h { margin: 6px 0 0; font-weight: 700; color: var(--brand); font-size: 14px; }
+        .m-search { display: flex; gap: 8px; align-items: center; background: #fff; border: 1.5px solid var(--accent); border-radius: 12px; padding: 10px 12px; color: var(--muted); }
+        .m-card { background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); display: grid; gap: 2px; padding-bottom: 10px; }
+        .m-card.dim { opacity: .6; }
+        .m-card b, .m-card small, .m-row { padding: 0 12px; }
+        .m-card small { color: var(--muted); }
+        .m-cover { height: 70px; margin-bottom: 8px; }
+        .c1 { background: linear-gradient(135deg, #1d2b64, #FB7212); }
+        .c2 { background: linear-gradient(135deg, #005f73, #f8b500); }
+        .m-row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+        .m-btn { background: var(--accent); color: #fff; border-radius: 8px; padding: 4px 10px; font-weight: 600; }
+        .m-stop { display: grid; grid-template-columns: 40px 14px 1fr; gap: 8px; align-items: center; background: #fff; border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 10px; }
+        .m-stop span { color: var(--brand); font-weight: 600; }
+        .m-stop i { width: 12px; height: 12px; border-radius: 50%; border: 3px solid #b7c3d3; }
+        .m-stop.on { border-color: var(--accent); background: var(--accent-soft); }
+        .m-stop.on i { border-color: var(--accent); background: var(--accent); }
+        .m-input { display: flex; justify-content: space-between; background: #fff; border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 10px; }
+        .m-input em { font-style: normal; color: var(--muted); font-size: 11.5px; }
+        .m-add { border: 1.5px dashed #b9c6d6; color: var(--brand); border-radius: 10px; padding: 8px; text-align: center; font-weight: 600; }
+        .m-wave { background: #1dc8ff; color: #04263a; border-radius: 12px; padding: 12px; text-align: center; font-weight: 600; }
+        .m-receipt { display: flex; gap: 8px; align-items: center; background: var(--ok-soft); color: var(--ok); border: 1.5px solid #9fd8be; border-radius: 10px; padding: 10px; }
+        .m-receipt em { margin-left: auto; font-style: normal; }
+        .m-read { display: flex; justify-content: space-between; background: #fff; border: 1.5px solid #b7e2cf; border-radius: 10px; padding: 9px 10px; }
+        .m-read span { color: var(--muted); }
+        .m-ok { color: var(--ok); font-weight: 600; text-align: center; }
+        .m-ticket { background: var(--brand); color: #fff; border-radius: 18px; padding: 16px; display: grid; gap: 8px; justify-items: center; text-align: center; margin-top: 10px; }
+        .m-ticket small { color: #ffb07a; font-weight: 600; letter-spacing: .06em; font-size: 10.5px; }
+        .m-ticket b { font-size: 16px; }
+        .m-ticket > span { color: #c9d8ea; }
+        .m-qr { display: grid; grid-template-columns: repeat(7, 18px); gap: 2px; background: #fff; padding: 10px; border-radius: 12px; }
+        .m-qr i { width: 18px; height: 18px; background: var(--brand-dark); border-radius: 2px; }
+        .m-legs { display: flex; gap: 6px; }
+        .m-legs em { font-style: normal; font-size: 11.5px; padding: 3px 9px; border-radius: 99px; background: rgba(255,255,255,.14); }
+        .m-legs em.done { background: var(--ok); }
+        @media (max-width: 899px) { .phone { width: 250px; height: 480px; } }
+
+        /* Animations d'entrée et au défilement */
+        .hero-text > * { animation: monte .7s cubic-bezier(.2,.7,.2,1) both; }
+        .hero-text > *:nth-child(2) { animation-delay: .08s; }
+        .hero-text > *:nth-child(3) { animation-delay: .16s; }
+        .hero-text > *:nth-child(4) { animation-delay: .24s; }
+        .hero-text > *:nth-child(5) { animation-delay: .32s; }
+        .hero-illu { animation: roule 1.1s cubic-bezier(.2,.7,.2,1) .2s both; }
+        @keyframes roule { from { transform: translateX(120px); opacity: 0; } to { transform: none; opacity: .95; } }
+        .enter { animation: monte .55s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--i, 0) * 70ms); }
 
         /* Avantages */
         .benefits { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }

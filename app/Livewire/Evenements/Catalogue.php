@@ -11,12 +11,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
-use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
 #[Layout('components.layouts.site')]
-#[Title('Transport aller-retour pour vos événements')]
 class Catalogue extends Component
 {
     /** Recherche libre : nom de l'événement, lieu ou ville. */
@@ -89,6 +87,11 @@ class Catalogue extends Component
 
     public function render()
     {
-        return view('livewire.evenements.catalogue');
+        return view('livewire.evenements.catalogue')
+            ->title('')
+            ->layoutData([
+                'description' => 'CotaTrans : réserve ton transport aller-retour en car pour tes événements et sorties à Abidjan (concerts, festivals, matchs, journées récréatives). Ramassage près de chez toi, paiement Mobile Money, billet QR.',
+                'canonical' => route('home'),
+            ]);
     }
 }

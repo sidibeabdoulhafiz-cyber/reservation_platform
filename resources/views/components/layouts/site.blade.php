@@ -6,8 +6,69 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#0C4173">
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-icone.svg') }}">
-    <title>{{ isset($title) ? $title.' · CotaTrans' : 'CotaTrans · Transport aller-retour pour vos événements' }}</title>
-    <meta name="description" content="Réservez votre aller-retour en car pour vos concerts, festivals et matchs. Ramassage près de chez vous, paiement Mobile Money, billet QR code par passager.">
+    @php
+        // ---------- SEO ----------
+        $nomSite = 'CotaTrans';
+        $titreComplet = isset($title) && $title
+            ? $title.' · '.$nomSite
+            : $nomSite.' · Transport aller-retour pour vos événements et sorties à Abidjan';
+        $desc = $description ?? 'CotaTrans, le transport aller-retour de vos événements et sorties à Abidjan : concerts, festivals, matchs, journées récréatives. Réservez votre place en car, ramassage près de chez vous, paiement Mobile Money, billet QR code.';
+        $urlCanonique = $canonical ?? url()->current();
+        $imagePartage = $ogImage ?? asset('images/og-cotatrans.jpg');
+        $prive = ($noindex ?? false) || request()->routeIs('login', 'register', 'password.*', 'verification.*', 'reservations.*', 'profile.*', 'controle.*', 'dashboard', 'dev.*');
+        $gsc = \App\Models\Setting::get('google_site_verification');
+    @endphp
+    <title>{{ $titreComplet }}</title>
+    <meta name="description" content="{{ \Illuminate\Support\Str::limit(strip_tags($desc), 160, '…') }}">
+    <meta name="robots" content="{{ $prive ? 'noindex, nofollow' : 'index, follow, max-image-preview:large' }}">
+    <link rel="canonical" href="{{ $urlCanonique }}">
+    <meta name="application-name" content="CotaTrans">
+    <meta name="apple-mobile-web-app-title" content="CotaTrans">
+    <meta name="format-detection" content="telephone=no">
+    <meta property="og:site_name" content="CotaTrans">
+    <meta property="og:locale" content="fr_CI">
+    <meta property="og:type" content="{{ $ogType ?? 'website' }}">
+    <meta property="og:title" content="{{ $titreComplet }}">
+    <meta property="og:description" content="{{ \Illuminate\Support\Str::limit(strip_tags($desc), 200, '…') }}">
+    <meta property="og:url" content="{{ $urlCanonique }}">
+    <meta property="og:image" content="{{ $imagePartage }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $titreComplet }}">
+    <meta name="twitter:description" content="{{ \Illuminate\Support\Str::limit(strip_tags($desc), 200, '…') }}">
+    <meta name="twitter:image" content="{{ $imagePartage }}">
+    @if ($gsc)
+        <meta name="google-site-verification" content="{{ $gsc }}">
+    @endif
+    <link rel="apple-touch-icon" href="{{ asset('images/logo-icone.svg') }}">
+    @php
+        $reseaux = collect(\App\Filament\Pages\Settings::RESEAUX)->keys()->map(fn ($k) => \App\Models\Setting::get($k))->filter()->values()->all();
+        $ldBase = [
+            [
+                '@context' => 'https://schema.org',
+                '@type' => 'Organization',
+                'name' => 'CotaTrans',
+                'url' => url('/'),
+                'logo' => asset('images/logo-icone.svg'),
+                'description' => 'Transport aller-retour en car pour les événements et sorties : concerts, festivals, matchs.',
+                'areaServed' => ['@type' => 'City', 'name' => 'Abidjan'],
+                'sameAs' => $reseaux,
+            ],
+            [
+                '@context' => 'https://schema.org',
+                '@type' => 'WebSite',
+                'name' => 'CotaTrans',
+                'url' => url('/'),
+                'inLanguage' => 'fr',
+                'potentialAction' => [
+                    '@type' => 'SearchAction',
+                    'target' => url('/').'?q={search_term_string}#evenements',
+                    'query-input' => 'required name=search_term_string',
+                ],
+            ],
+        ];
+    @endphp
+    <script type="application/ld+json">{!! json_encode(array_merge(request()->routeIs('home') ? $ldBase : [], $jsonld ?? []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
+    <script>document.documentElement.classList.add('js');</script>
     @livewireStyles
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -321,6 +382,9 @@
         .empty .ico { color: var(--brand); margin: 0 auto 12px; }
 
         /* Apparition douce au défilement */
+        /* Apparition au défilement des éléments [data-anim] (statiques). Sans JS : tout reste visible. */
+        [data-anim] { transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); transition-delay: var(--d, 0s); }
+        .js [data-anim]:not(.vu) { opacity: 0; transform: translateY(26px); }
         /* (CSS pur, compatible avec les mises à jour Livewire ; visible d'office si non supporté) */
         @keyframes monte { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
         @supports (animation-timeline: view()) {
@@ -336,11 +400,19 @@
         .foot-col h4 { color: #fff; font: 600 15px var(--body); margin: 0 0 12px; }
         .foot-col a { display: block; color: #c3d2e4; text-decoration: none; padding: 4px 0; }
         .foot-col a:hover { color: var(--accent); }
+        .socials { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+        .socials a { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.08); color: #fff; transition: background .2s, transform .2s; }
+        .socials a:hover { background: var(--accent); transform: translateY(-2px); }
+        .cookie { position: fixed; left: 16px; right: 16px; bottom: calc(16px + var(--tabbar-h) + env(safe-area-inset-bottom)); z-index: 60; max-width: 560px; margin-left: auto; background: #fff; border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow-lg); padding: 16px 18px; font-size: 14.5px; }
+        .cookie p { margin: 0 0 12px; color: var(--muted); }
+        .cookie b { color: var(--fg); }
+        .cookie-actions { display: flex; gap: 8px; justify-content: flex-end; }
         .site-foot .copy { max-width: 1200px; margin: 0 auto; padding: 16px 20px 20px; border-top: 1px solid rgba(255,255,255,.1); font-size: 13.5px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
             .reveal { animation: none !important; }
+            .js [data-anim]:not(.vu) { opacity: 1; transform: none; }
         }
         @media print {
             .site-top, .site-foot, .tabbar, .noprint, .global-msg { display: none !important; }
@@ -409,39 +481,87 @@
         </div>
     </main>
 
+    @php
+        $liensReseaux = collect(\App\Filament\Pages\Settings::RESEAUX)
+            ->map(fn ($lib, $cle) => ['nom' => substr($cle, 7), 'lib' => explode(' (', $lib)[0], 'url' => \App\Models\Setting::get($cle)])
+            ->filter(fn ($r) => filled($r['url']))->values();
+        $telContact = \App\Models\Setting::get('contact_tel');
+    @endphp
     <footer class="site-foot">
         <div class="in">
             <div class="foot-brand">
-                <img src="{{ asset('images/logo-horizontal-blanc.svg') }}" alt="CotaTrans" width="134" height="38">
-                <p>Le transport aller-retour de tes événements : concerts, festivals, matchs. Ramassage près de chez toi, un billet QR par passager.</p>
+                <img src="{{ asset('images/logo-horizontal-blanc.svg') }}" alt="CotaTrans" width="134" height="38" loading="lazy">
+                <p>Le transport aller-retour de tes événements et sorties à Abidjan : concerts, festivals, matchs. Ramassage près de chez toi, un billet QR par passager.</p>
+                @if ($liensReseaux->isNotEmpty())
+                    <div class="socials" aria-label="CotaTrans sur les réseaux sociaux">
+                        @foreach ($liensReseaux as $r)
+                            <a href="{{ $r['url'] }}" target="_blank" rel="noopener me" aria-label="CotaTrans sur {{ $r['lib'] }}" title="{{ $r['lib'] }}"><x-social :name="$r['nom']" /></a>
+                        @endforeach
+                    </div>
+                @endif
             </div>
             <div class="foot-col">
-                <h4>Plateforme</h4>
+                <h4>Voyager</h4>
                 <a href="{{ route('home') }}#evenements">Événements</a>
                 <a href="{{ route('home') }}#comment-ca-marche">Comment ça marche ?</a>
-                <a href="{{ route('home') }}#avantages">Avantages</a>
-            </div>
-            <div class="foot-col">
-                <h4>Mon compte</h4>
+                <a href="{{ route('home') }}#avantages">Pourquoi CotaTrans</a>
                 @auth
                     <a href="{{ route('reservations.index') }}">Mes réservations</a>
-                    <a href="{{ route('profile.edit') }}">Profil</a>
                 @else
-                    <a href="{{ route('login') }}">Connexion</a>
                     <a href="{{ route('register') }}">Créer un compte</a>
                 @endauth
             </div>
             <div class="foot-col">
                 <h4>Organisateurs</h4>
-                <a href="mailto:{{ config('mail.from.address') }}?subject=Proposer%20un%20%C3%A9v%C3%A9nement">Proposer un événement</a>
-                <a href="mailto:{{ config('mail.from.address') }}">Nous contacter</a>
+                <a href="{{ route('organisateurs') }}">Proposer un événement</a>
+                <a href="{{ route('organisateurs') }}#avantages-orga">Transport pour votre public</a>
+            </div>
+            <div class="foot-col">
+                <h4>Aide</h4>
+                <a href="{{ route('contact') }}">Nous contacter</a>
+                @if ($telContact)
+                    <a href="tel:{{ preg_replace('/[^\d+]/', '', $telContact) }}">{{ $telContact }}</a>
+                @endif
+                <a href="{{ route('confidentialite') }}">Confidentialité et cookies</a>
             </div>
         </div>
         <div class="copy">
-            <span>© {{ date('Y') }} CotaTrans. Tous droits réservés.</span>
+            <span>© {{ date('Y') }} CotaTrans · Transport événementiel à Abidjan</span>
             <span>Paiement Mobile Money · Billet QR code</span>
         </div>
     </footer>
+
+    @php
+        $ga4 = \App\Models\Setting::get('ga4_id');
+        $pixel = \App\Models\Setting::get('meta_pixel_id');
+    @endphp
+    @if ($ga4 || $pixel)
+        {{-- Consentement cookies : la mesure d'audience n'est chargée qu'après accord. --}}
+        <div class="cookie" x-data="{
+                choix: (() => { try { return localStorage.getItem('ct_cookies'); } catch (e) { return null; } })(),
+                ouvert: false,
+                init() { this.ouvert = this.choix === null; if (this.choix === 'oui') this.charger(); window.addEventListener('ct-cookies', () => this.ouvert = true); },
+                decider(v) { this.choix = v; this.ouvert = false; try { localStorage.setItem('ct_cookies', v); } catch (e) {} if (v === 'oui') this.charger(); },
+                charger() {
+                    if (window.__ctMesure) return; window.__ctMesure = true;
+                    @if ($ga4)
+                        const g = document.createElement('script'); g.async = true; g.src = 'https://www.googletagmanager.com/gtag/js?id={{ $ga4 }}'; document.head.appendChild(g);
+                        window.dataLayer = window.dataLayer || []; window.gtag = function () { dataLayer.push(arguments); };
+                        gtag('js', new Date()); gtag('config', '{{ $ga4 }}', { anonymize_ip: true });
+                    @endif
+                    @if ($pixel)
+                        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+                        fbq('init', '{{ $pixel }}'); fbq('track', 'PageView');
+                    @endif
+                }
+            }" x-show="ouvert" x-cloak x-transition.opacity role="dialog" aria-label="Cookies">
+            <p><b>Cookies</b> · On utilise des cookies de mesure d’audience pour améliorer CotaTrans et nos publicités. Les cookies indispensables (connexion, réservation) restent actifs dans tous les cas. <a href="{{ route('confidentialite') }}#cookies">En savoir plus</a></p>
+            <div class="cookie-actions">
+                <button type="button" class="btn btn-ghost btn-sm" @click="decider('non')">Refuser</button>
+                <button type="button" class="btn btn-sm" @click="decider('oui')">Accepter</button>
+            </div>
+        </div>
+    @endif
 
     {{-- Barre d'onglets mobile --}}
     <nav class="tabbar" aria-label="Navigation mobile">
@@ -458,6 +578,22 @@
     {{-- Lecture automatique des reçus (doit être chargé avant Alpine) --}}
     <script src="{{ asset('js/cotatrans-preuve.js') }}?v={{ @filemtime(public_path('js/cotatrans-preuve.js')) }}"></script>
     @livewireScripts
+    <script>
+        // Apparition douce au défilement : un léger décalage entre éléments voisins.
+        (() => {
+            const io = 'IntersectionObserver' in window ? new IntersectionObserver((entrees) => {
+                entrees.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('vu'); io.unobserve(e.target); } });
+            }, { threshold: .12, rootMargin: '0px 0px -40px 0px' }) : null;
+            const brancher = () => document.querySelectorAll('[data-anim]:not(.vu):not([data-obs])').forEach((el) => {
+                el.dataset.obs = '1';
+                const freres = [...el.parentElement.children].filter((c) => c.hasAttribute('data-anim'));
+                el.style.setProperty('--d', (Math.min(freres.indexOf(el), 5) * 0.08) + 's');
+                io ? io.observe(el) : el.classList.add('vu');
+            });
+            document.addEventListener('DOMContentLoaded', brancher);
+            document.addEventListener('livewire:navigated', brancher);
+        })();
+    </script>
     @stack('scripts')
 </body>
 </html>

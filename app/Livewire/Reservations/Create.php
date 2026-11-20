@@ -228,7 +228,14 @@ class Create extends Component
 
         if (! Auth::check()) {
             session(['reservation_draft' => $choix]);
-            $this->identifier();
+
+            try {
+                $this->identifier();
+            } catch (ValidationException $e) {
+                // Fait vibrer et remonter le bloc d'inscription pour attirer l'attention.
+                $this->dispatch('attirer-inscription');
+                throw $e;
+            }
         }
 
         if (trim((string) ($choix['passagers'][0] ?? '')) === '') {
@@ -313,8 +320,54 @@ class Create extends Component
 
     public function render()
     {
+        $evt = $this->evenement;
+        $prixMin = $this->departs->flatMap->tarifs->min('prix');
+        $date = $evt->debut_at->locale('fr')->translatedFormat('j F Y');
+
         return view('livewire.reservations.create')
-            ->title($this->evenement->titre);
+            ->title('Transport '.$evt->titre.' · '.$date)
+            ->layoutData([
+                'description' => 'Transport aller-retour en car pour '.$evt->titre.' ('.$evt->lieu.', '.$evt->ville.', '.$date.')'
+                    .($prixMin ? ', dès '.number_format((int) $prixMin, 0, ',', ' ').' FCFA' : '')
+                    .'. Ramassage dans ton quartier, paiement Mobile Money, billet QR. Réserve sur CotaTrans.',
+                'ogImage' => $evt->imageUrl() ? url($evt->imageUrl()) : null,
+                'ogType' => 'event',
+                'canonical' => route('evenements.show', $evt),
+                'jsonld' => [$this->jsonLdEvenement($prixMin)],
+            ]);
+    }
+
+    /** Données structurées schema.org/Event : aide Google à afficher l'événement dans ses résultats. */
+    private function jsonLdEvenement(mixed $prixMin): array
+    {
+        $evt = $this->evenement;
+
+        return array_filter([
+            '@context' => 'https://schema.org',
+            '@type' => 'Event',
+            'name' => $evt->titre,
+            'description' => $evt->accroche ?: Str::limit((string) $evt->description, 300),
+            'startDate' => $evt->debut_at->toIso8601String(),
+            'endDate' => $evt->fin_at?->toIso8601String(),
+            'eventStatus' => $evt->statut === 'annule' ? 'https://schema.org/EventCancelled' : 'https://schema.org/EventScheduled',
+            'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
+            'image' => $evt->imageUrl() ? [url($evt->imageUrl())] : null,
+            'location' => [
+                '@type' => 'Place',
+                'name' => $evt->lieu,
+                'address' => ['@type' => 'PostalAddress', 'addressLocality' => $evt->ville, 'addressCountry' => 'CI'],
+            ],
+            'organizer' => ['@type' => 'Organization', 'name' => 'CotaTrans', 'url' => url('/')],
+            'offers' => $prixMin ? [
+                '@type' => 'Offer',
+                'name' => 'Transport aller-retour',
+                'price' => (int) $prixMin,
+                'priceCurrency' => 'XOF',
+                'availability' => $this->departs->contains(fn ($d) => $d->placesRestantes() > 0) ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
+                'url' => route('evenements.show', $evt),
+                'validFrom' => $evt->created_at?->toIso8601String(),
+            ] : null,
+        ]);
     }
 
     private function assurerSelection(): void

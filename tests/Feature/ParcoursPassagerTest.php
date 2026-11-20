@@ -57,7 +57,7 @@ class ParcoursPassagerTest extends TestCase
             ->assertSeeInOrder(['Yopougon', 'Cocody'])
             ->assertSee('Principal')
             ->assertSee('Qui voyage ?')
-            ->assertSee('Réserver et payer');
+            ->assertSee('Créer mon compte et réserver');
     }
 
     public function test_evenement_brouillon_introuvable(): void
@@ -151,32 +151,6 @@ class ParcoursPassagerTest extends TestCase
         Mail::assertSent(PaiementRecu::class);
     }
 
-    public function test_le_formulaire_paiement_garde_intact_son_javascript_ocr(): void
-    {
-        [$evt, $depart, $yop] = $this->catalogue();
-        $client = User::factory()->create(['role' => 'client', 'actif' => true]);
-        $r = app(CreateReservation::class)->handle($client, ['type' => 'transport', 'depart_id' => $depart->id, 'zone_id' => $yop->id, 'quantite' => 1]);
-
-        $html = Livewire::actingAs($client)->test(Suivi::class, ['reservation' => $r])->html();
-
-        $dom = new \DOMDocument();
-        @$dom->loadHTML('<?xml encoding="utf-8"?>'.$html);
-
-        $xdata = null;
-        foreach ($dom->getElementsByTagName('form') as $form) {
-            if ($form->hasAttribute('x-data')) {
-                $xdata = $form->getAttribute('x-data');
-                break;
-            }
-        }
-
-        $this->assertNotNull($xdata, 'Le formulaire de paiement n’a plus d’attribut x-data : le JavaScript est tronqué.');
-        $this->assertStringNotContainsString('"', $xdata, 'Un guillemet double dans x-data coupe l’attribut au milieu du code : le code s’affiche en clair et l’OCR est cassé.');
-        $this->assertStringContainsString('retirer() {', $xdata, 'x-data est tronqué : la fonction retirer() (fin du bloc) est absente.');
-        $this->assertStringContainsString('extraireDepuisTexte(text) {', $xdata);
-        $this->assertStringContainsString('Tesseract.createWorker', $xdata);
-    }
-
     public function test_client_peut_annuler_une_reservation_a_payer(): void
     {
         [$evt, $depart, $yop] = $this->catalogue();
@@ -253,6 +227,42 @@ class ParcoursPassagerTest extends TestCase
 
         $this->expectExceptionMessage('Key not found');
         $transport->send((new Email)->from('a@b.ci')->to('c@d.ci')->subject('x')->text('y'));
+    }
+
+    public function test_le_formulaire_paiement_garde_intact_son_javascript_ocr(): void
+    {
+        [$evt, $depart, $yop] = $this->catalogue();
+        $client = User::factory()->create(['role' => 'client', 'actif' => true]);
+        $r = app(CreateReservation::class)->handle($client, ['type' => 'transport', 'depart_id' => $depart->id, 'zone_id' => $yop->id, 'quantite' => 1]);
+
+        // Tester le composant Suivi (paiement) : pas de JS brut exposé
+        $html = Livewire::actingAs($client)->test(Suivi::class, ['reservation' => $r])->html();
+        $this->assertStringNotContainsString('parseInt', $html, 'Du code JavaScript brut (parseInt) est affiché dans le HTML');
+        $this->assertStringNotContainsString('extraireDepuisTexte', $html);
+        $this->assertStringNotContainsString('Tesseract.createWorker', $html);
+
+        // Tester la page d'accueil (Catalogue) : section "Comment ça marche" interactive
+        $html = $this->get('/')->assertOk()->getContent();
+        $dom = new \DOMDocument();
+        @$dom->loadHTML('<?xml encoding="utf-8"?>'.$html);
+
+        // Vérifier la présence de la section interactive
+        $section = $dom->getElementById('comment-ca-marche');
+        $this->assertNotNull($section, 'La section "Comment ça marche" doit exister');
+
+        $stepsInteractive = null;
+        foreach ($section->getElementsByTagName('div') as $div) {
+            if ($div->hasAttribute('x-data') && str_contains(' '.$div->getAttribute('class').' ', ' how ')) {
+                $stepsInteractive = $div;
+                break;
+            }
+        }
+        $this->assertNotNull($stepsInteractive, 'Le conteneur interactif (.how) doit avoir x-data');
+
+        $xdata = $stepsInteractive->getAttribute('x-data');
+        $this->assertStringNotContainsString('"', $xdata, 'Pas de guillemets doubles dans x-data');
+        $this->assertStringContainsString('aller(', $xdata);
+        $this->assertSame(4, $section->getElementsByTagName('ol')->item(0)?->getElementsByTagName('button')->length);
     }
 
     /** @return array{0: Evenement, 1: Depart, 2: Zone, 3: Zone} */

@@ -3,8 +3,11 @@
 use App\Http\Controllers\CaptureController;
 use App\Http\Controllers\ImpressionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SitemapController;
 use App\Livewire\Controle\Scanner;
 use App\Livewire\Evenements\Catalogue;
+use App\Livewire\Pages\Contact;
+use App\Livewire\Pages\Organisateurs;
 use App\Livewire\Reservations\Create;
 use App\Livewire\Reservations\MyReservations;
 use App\Livewire\Reservations\Suivi;
@@ -15,6 +18,22 @@ use Illuminate\Support\Str;
 // Parcours public
 Route::get('/', Catalogue::class)->name('home');
 Route::get('/evenements/{evenement}', Create::class)->name('evenements.show');
+Route::get('/organisateurs', Organisateurs::class)->name('organisateurs');
+Route::get('/contact', Contact::class)->name('contact');
+Route::view('/confidentialite', 'pages.confidentialite')->name('confidentialite');
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+Route::get('/robots.txt', fn () => response(implode("\n", [
+    'User-agent: *',
+    'Allow: /',
+    'Disallow: /admin',
+    'Disallow: /controle',
+    'Disallow: /reservations/',
+    'Disallow: /mes-reservations',
+    'Disallow: /profile',
+    'Disallow: /captures/',
+    '',
+    'Sitemap: '.route('sitemap'),
+]), 200, ['Content-Type' => 'text/plain; charset=UTF-8']))->name('robots');
 
 Route::middleware(['auth'])->group(function () {
     // Après connexion / inscription : on renvoie là où le passager en était.

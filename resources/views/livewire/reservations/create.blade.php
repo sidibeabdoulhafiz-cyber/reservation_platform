@@ -170,7 +170,14 @@
                 </fieldset>
 
                 @guest
-                    <div class="ident">
+                    <div id="inscription" x-ref="ident" @class(['ident', 'attention' => $errors->hasAny(['nom', 'tel', 'email', 'password'])])
+                         x-data="{ secoue: false }"
+                         x-on:attirer-inscription.window="secoue = false; $nextTick(() => { $el.scrollIntoView({ behavior: 'smooth', block: 'center' }); secoue = true; setTimeout(() => secoue = false, 1300); const i = $el.querySelector('input'); if (i) setTimeout(() => i.focus({ preventScroll: true }), 500); })"
+                         :class="{ 'shake': secoue }">
+                        <div class="ident-banner">
+                            <x-ico name="user" size="20" />
+                            <div><b>Dernière étape : ton compte</b><span>30 secondes, pour recevoir tes billets et les retrouver à tout moment.</span></div>
+                        </div>
                         <fieldset>
                             <legend><span class="num">{{ $n++ }}</span> Ton compte</legend>
                             <div class="seg" role="tablist">
@@ -254,8 +261,15 @@
                 </div>
 
                 <div class="bar">
-                    <button class="cta" type="submit" @disabled(! $this->open || $prix < 1 || $complet) wire:loading.attr="disabled" wire:target="reserve">
-                        <span wire:loading.remove wire:target="reserve">{{ $complet ? 'Complet' : 'Réserver et payer' }}</span>
+                    <button class="cta" type="submit" @disabled(! $this->open || $prix < 1 || $complet) wire:loading.attr="disabled" wire:target="reserve"
+                        @guest
+                            x-on:click="
+                                const bloc = document.getElementById('inscription');
+                                const champs = bloc ? [...bloc.querySelectorAll('input')].filter(i => i.offsetParent !== null) : [];
+                                if (champs.some(i => ! i.value.trim())) { $event.preventDefault(); window.dispatchEvent(new CustomEvent('attirer-inscription')); }
+                            "
+                        @endguest>
+                        <span wire:loading.remove wire:target="reserve">{{ $complet ? 'Complet' : (auth()->check() ? 'Réserver et payer' : 'Créer mon compte et réserver') }}</span>
                         <span wire:loading wire:target="reserve">Un instant…</span>
                         <span class="amt">{{ number_format($prix * $quantite, 0, ',', ' ') }} F</span>
                     </button>
@@ -292,7 +306,14 @@
         .pax-del:hover { color: var(--err); border-color: var(--err); }
         .add-pax { display: inline-flex; align-items: center; gap: 8px; border: 1.5px dashed #b9c6d6; background: none; color: var(--brand); font: 600 15px var(--body); border-radius: 12px; padding: 10px 16px; min-height: 46px; cursor: pointer; width: 100%; justify-content: center; }
         .add-pax:hover { border-color: var(--brand); background: var(--brand-soft); }
-        .ident { padding-top: 22px; border-top: 1px solid var(--line); }
+.ident { margin-top: 4px; padding: 20px; border: 2px solid var(--accent); border-radius: var(--r); background: linear-gradient(#fff, #fff) padding-box; box-shadow: 0 0 0 6px var(--accent-soft); transition: box-shadow .3s; }
+        .ident-banner { display: flex; gap: 12px; align-items: flex-start; background: var(--accent-soft); color: var(--accent-dark); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; }
+        .ident-banner b { display: block; color: var(--fg); }
+        .ident-banner span { font-size: 14px; color: var(--muted); }
+        .ident.attention { animation: pulse-ring 1.6s ease-out 2; }
+        .ident.shake { animation: shake .6s cubic-bezier(.36,.07,.19,.97) both, pulse-ring 1.2s ease-out; }
+        @keyframes shake { 10%, 90% { transform: translateX(-2px); } 20%, 80% { transform: translateX(4px); } 30%, 50%, 70% { transform: translateX(-8px); } 40%, 60% { transform: translateX(8px); } }
+        @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(251,114,18,.55); } 100% { box-shadow: 0 0 0 18px rgba(251,114,18,0); } }
         .ident fieldset { margin-bottom: 0; }
         .recap-title { color: var(--brand); margin-bottom: 14px; }
         .legs-list { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 12px; }

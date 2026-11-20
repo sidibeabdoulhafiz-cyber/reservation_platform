@@ -12,6 +12,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\HtmlString;
@@ -91,31 +92,75 @@ class Settings extends Page
             'message_global' => Setting::get('message_global', ''),
             'site_ouvert' => (string) Setting::get('site_ouvert', '1') === '1',
             'hero_image' => Setting::get('hero_image') ?: null,
+            ...collect([...array_keys(self::RESEAUX), ...self::TEXTES])->mapWithKeys(fn ($k) => [$k => Setting::get($k, '')])->all(),
         ]);
     }
+
+    /** Réglages texte simples enregistrés tels quels (clé => libellé). */
+    public const RESEAUX = [
+        'reseau_facebook' => 'Facebook',
+        'reseau_instagram' => 'Instagram',
+        'reseau_tiktok' => 'TikTok',
+        'reseau_whatsapp' => 'WhatsApp (chaîne, groupe ou wa.me)',
+        'reseau_youtube' => 'YouTube',
+        'reseau_x' => 'X (Twitter)',
+        'reseau_linkedin' => 'LinkedIn',
+    ];
+
+    public const TEXTES = ['email_reception', 'ga4_id', 'meta_pixel_id', 'google_site_verification', 'contact_tel'];
 
     public function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                TextInput::make('wave_link')->label('Lien de paiement Wave')->required()
-                    ->helperText('En production : https:// uniquement. En local, un lien http:// (simulation /dev/payer) est accepté, sans HTTPS.'),
-                Toggle::make('wave_amount')->label('Ajouter le montant au lien Wave')
-                    ->helperText('À activer seulement si le compte Wave Business l’accepte.'),
-                TextInput::make('delai_paiement_min')->label('Délai de paiement (minutes)')
-                    ->numeric()->minValue(5)->maxValue(180)->required(),
-                TextInput::make('message_global')->label('Message affiché sur le site')
-                    ->helperText('Facultatif. Visible en haut de toutes les pages.')->maxLength(255),
-                Toggle::make('site_ouvert')->label('Réservations ouvertes'),
-                Placeholder::make('etat_mail')->label('E-mails (Brevo)')
-                    ->content(fn () => static::etatMail())
+                Section::make('Paiement et réservations')->columns(2)->schema([
+                    TextInput::make('wave_link')->label('Lien de paiement Wave')->required()->columnSpanFull()
+                        ->helperText('En production : https:// uniquement. En local, un lien http:// (simulation /dev/payer) est accepté, sans HTTPS.'),
+                    Toggle::make('wave_amount')->label('Ajouter le montant au lien Wave')
+                        ->helperText('À activer seulement si le compte Wave Business l’accepte.'),
+                    Toggle::make('site_ouvert')->label('Réservations ouvertes'),
+                    TextInput::make('delai_paiement_min')->label('Délai de paiement (minutes)')
+                        ->numeric()->minValue(5)->maxValue(180)->required(),
+                ])->columnSpanFull(),
+
+                Section::make('Site')->schema([
+                    TextInput::make('message_global')->label('Message affiché sur le site')
+                        ->helperText('Facultatif. Visible en haut de toutes les pages.')->maxLength(255),
+                    FileUpload::make('hero_image')->label('Photo de la bannière d’accueil')
+                        ->helperText('Photo paysage (ex. car de participants devant un stade ou une salle). 1920×1080 conseillé, 5 Mo max. Un dégradé bleu est ajouté à gauche pour la lisibilité du texte.')
+                        ->image()->disk('public')->directory('site')->visibility('public')
+                        ->maxSize(5120)->imageCropAspectRatio('16:9')->imageResizeMode('cover')->imageResizeTargetWidth('1920')->imageResizeTargetHeight('1080')
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp']),
+                ])->columnSpanFull(),
+
+                Section::make('E-mails (Brevo) et contact')->columns(2)->schema([
+                    Placeholder::make('etat_mail')->label('État de l’envoi')
+                        ->content(fn () => static::etatMail())
+                        ->columnSpanFull(),
+                    TextInput::make('email_reception')->label('E-mail qui reçoit les messages du site')->email()
+                        ->placeholder(config('mail.from.address'))
+                        ->helperText('Demandes d’organisateurs et formulaire « Nous contacter ». Vide = adresse d’expédition.'),
+                    TextInput::make('contact_tel')->label('Téléphone affiché (pied de page)')->tel()->placeholder('+225 07 00 00 00 00'),
+                ])->columnSpanFull(),
+
+                Section::make('Réseaux sociaux')
+                    ->description('Les icônes apparaissent dans le pied de page pour chaque lien renseigné.')
+                    ->columns(2)
+                    ->schema(collect(self::RESEAUX)->map(fn ($lib, $cle) => TextInput::make($cle)->label($lib)->url()->placeholder('https://…'))->values()->all())
                     ->columnSpanFull(),
-                FileUpload::make('hero_image')->label('Photo de la bannière d’accueil')
-                    ->helperText('Photo paysage (ex. car de participants devant un stade ou une salle). 1920×1080 conseillé, 5 Mo max. Un dégradé bleu est ajouté à gauche pour la lisibilité du texte.')
-                    ->image()->disk('public')->directory('site')->visibility('public')
-                    ->maxSize(5120)->imageCropAspectRatio('16:9')->imageResizeMode('cover')->imageResizeTargetWidth('1920')->imageResizeTargetHeight('1080')
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                    ->columnSpanFull(),
+
+                Section::make('Cookies et mesure d’audience')
+                    ->description('Les outils de mesure ne sont chargés qu’après l’accord du visiteur (bannière cookies). Laisser vide pour ne rien charger.')
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('ga4_id')->label('Google Analytics 4 (ID de mesure)')->placeholder('G-XXXXXXXXXX')
+                            ->regex('/^G-[A-Z0-9]{4,15}$/')->helperText('Statistiques de visites et de réservations.'),
+                        TextInput::make('meta_pixel_id')->label('Meta Pixel (Facebook / Instagram)')->placeholder('123456789012345')
+                            ->regex('/^\d{8,20}$/')->helperText('Mesure et ciblage de vos publicités Facebook / Instagram.'),
+                        TextInput::make('google_site_verification')->label('Google Search Console (code de vérification)')
+                            ->helperText('Contenu de la balise « google-site-verification » (sans cookie, pour le référencement).')
+                            ->columnSpanFull(),
+                    ])->columnSpanFull(),
             ])
             ->statePath('data');
     }
@@ -142,6 +187,9 @@ class Settings extends Page
         Setting::set('message_global', $data['message_global'] ?? '');
         Setting::set('site_ouvert', $data['site_ouvert'] ? '1' : '0');
         Setting::set('hero_image', $data['hero_image'] ?? '');
+        foreach ([...array_keys(self::RESEAUX), ...self::TEXTES] as $cle) {
+            Setting::set($cle, trim((string) ($data[$cle] ?? '')));
+        }
 
         Notification::make()->title('Réglages enregistrés')->success()->send();
     }
