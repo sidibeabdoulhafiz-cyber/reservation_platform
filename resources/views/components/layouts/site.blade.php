@@ -554,7 +554,7 @@
         <div class="in">
             <div class="foot-brand">
                 <img src="{{ asset('images/logo-horizontal-blanc.svg') }}" alt="CotaTrans" width="134" height="38" loading="lazy">
-                <p>Le transport aller-retour de tes événements et sorties à Abidjan : concerts, festivals, matchs. Ramassage près de chez toi, un billet QR par passager.</p>
+                <p>Le transport aller-retour de vos événements et sorties à Abidjan : concerts, festivals, matchs. Ramassage près de chez vous, un billet QR par passager.</p>
                 @if ($liensReseaux->isNotEmpty())
                     <div class="socials" aria-label="CotaTrans sur les réseaux sociaux">
                         @foreach ($liensReseaux as $r)
@@ -622,7 +622,7 @@
             <template x-if="mesure">
                 <div>
                     <p><b>Cookies</b> · On utilise des cookies de mesure d’audience pour améliorer CotaTrans et nos publicités. Les cookies indispensables (connexion, réservation) restent actifs dans tous les cas. <a href="{{ route('confidentialite') }}#cookies">En savoir plus</a></p>
-                    <p class="cookie-etat" x-show="choix" x-text="choix === 'oui' ? 'Ton choix actuel : mesure d’audience acceptée.' : 'Ton choix actuel : mesure d’audience refusée.'"></p>
+                    <p class="cookie-etat" x-show="choix" x-text="choix === 'oui' ? 'Votre choix actuel : mesure d’audience acceptée.' : 'Votre choix actuel : mesure d’audience refusée.'"></p>
                     <div class="cookie-actions">
                         <button type="button" class="btn btn-ghost btn-sm" @click="decider('non')">Refuser</button>
                         <button type="button" class="btn btn-sm" @click="decider('oui')">Accepter</button>
@@ -643,7 +643,7 @@
     @endphp
     @if (strlen($waNumero) >= 8 && ! request()->routeIs('controle.*', 'code.*', 'login', 'register', 'password.*'))
         <a href="https://wa.me/{{ $waNumero }}?text={{ rawurlencode($waTexte.(request()->routeIs('evenements.show') ? ' ('.url()->current().')' : '')) }}"
-           class="wa-float noprint" target="_blank" rel="noopener" aria-label="Nous écrire sur WhatsApp" title="Une question ? Écris-nous sur WhatsApp">
+           class="wa-float noprint" target="_blank" rel="noopener" aria-label="Nous écrire sur WhatsApp" title="Une question ? Écrivez-nous sur WhatsApp">
             <x-social name="whatsapp" size="30" />
             <span class="wa-tip">Une question ?</span>
         </a>

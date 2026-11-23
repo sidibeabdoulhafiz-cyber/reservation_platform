@@ -149,23 +149,23 @@
 
                     if (this.montantLu && montant !== this.attendu) {
                         this.etat = 'ecart';
-                        this.message = 'Le reçu indique ' + fcfa(montant) + ' mais ta réservation coûte ' + fcfa(this.attendu)
-                            + '. Paie le montant exact puis ajoute le nouveau reçu.';
+                        this.message = 'Le reçu indique ' + fcfa(montant) + ' mais votre réservation coûte ' + fcfa(this.attendu)
+                            + '. Payez le montant exact puis ajoutez le nouveau reçu.';
                     } else if (this.montantLu && this.idLu) {
                         this.etat = 'lu';
                     } else if (this.montantLu || this.idLu) {
                         this.etat = 'partiel';
                         this.message = this.montantLu
-                            ? "ID de transaction illisible : recopie-le depuis le reçu."
-                            : 'Montant illisible : vérifie-le ci-dessous.';
+                            ? "ID de transaction illisible : recopiez-le depuis le reçu."
+                            : 'Montant illisible : vérifiez-le ci-dessous.';
                     } else {
                         this.etat = 'echec';
-                        this.message = 'Lecture automatique impossible : saisis l’ID et le montant à la main.';
+                        this.message = 'Lecture automatique impossible : saisissez l’ID et le montant à la main.';
                     }
                 } catch (err) {
                     console.warn('[CotaTrans] lecture du reçu :', err);
                     this.etat = 'echec';
-                    this.message = 'Lecture automatique indisponible (' + (err && err.message ? err.message : 'erreur') + '). Saisis l’ID et le montant à la main.';
+                    this.message = 'Lecture automatique indisponible pour le moment. Saisissez l’ID et le montant à la main.';
                 } finally {
                     if (worker) { try { await worker.terminate(); } catch (_) {} }
                 }

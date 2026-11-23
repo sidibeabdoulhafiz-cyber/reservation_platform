@@ -24,7 +24,7 @@ class MotDePasseOublieTest extends TestCase
 
         Notification::assertSentTo($user, ResetPassword::class, function (ResetPassword $n) use ($user) {
             $mail = $n->toMail($user);
-            $this->assertSame('Réinitialisation de ton mot de passe CotaTrans', $mail->subject);
+            $this->assertSame('Réinitialisation de votre mot de passe CotaTrans', $mail->subject);
             $this->assertSame('Choisir un nouveau mot de passe', $mail->actionText);
 
             $this->get('/reset-password/'.$n->token.'?email='.urlencode($user->email))

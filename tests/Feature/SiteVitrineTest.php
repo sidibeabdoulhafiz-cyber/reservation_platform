@@ -132,7 +132,7 @@ class SiteVitrineTest extends TestCase
         Setting::set('site_ouvert', '1');
 
         Livewire::test(Create::class, ['evenement' => $evt])
-            ->assertSee('Dernière étape : ton compte')
+            ->assertSee('Dernière étape : votre compte')
             ->assertSee('Créer mon compte et réserver')
             ->call('reserve')
             ->assertHasErrors(['nom', 'tel', 'email', 'password'])

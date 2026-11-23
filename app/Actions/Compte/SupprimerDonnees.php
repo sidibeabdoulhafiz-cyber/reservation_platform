@@ -34,7 +34,7 @@ class SupprimerDonnees
 
         if ($bloquantes > 0) {
             throw ValidationException::withMessages([
-                'password' => 'Tu as une réservation en cours ou un voyage à venir. Tu pourras supprimer tes données après ton retour, ou annule d’abord la réservation non payée.',
+                'password' => 'Vous avez une réservation en cours ou un voyage à venir. Vous pourrez supprimer vos données après votre retour, ou annulez d’abord la réservation non payée.',
             ])->errorBag('userDeletion');
         }
 

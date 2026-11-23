@@ -28,15 +28,15 @@ class RepondreMessage
 
         if ($m->estOrganisateur()) {
             return "Bonjour {$prenom},\n\n"
-                ."Merci pour ta demande de transport pour « {$m->evenement} ».\n\n"
-                ."Nous pouvons organiser l’aller-retour de ton public avec les éléments suivants :\n"
+                ."Merci pour votre demande de transport pour « {$m->evenement} ».\n\n"
+                ."Nous pouvons organiser l’aller-retour de votre public avec les éléments suivants :\n"
                 ."- Lignes et arrêts proposés : …\n"
                 ."- Nombre de cars / places : …\n"
                 ."- Tarif aller-retour par passager : … FCFA\n\n"
-                ."Dès ton accord, nous publions la page de réservation et t’envoyons le lien à partager avec ton public.\n\n"
+                ."Dès votre accord, nous publions la page de réservation et vous envoyons le lien à partager avec votre public.\n\n"
                 ."Bien cordialement,";
         }
 
-        return "Bonjour {$prenom},\n\nMerci pour ton message.\n\n…\n\nBien cordialement,";
+        return "Bonjour {$prenom},\n\nMerci pour votre message.\n\n…\n\nBien cordialement,";
     }
 }

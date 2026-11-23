@@ -1,7 +1,7 @@
 <x-guest-layout title="Nouveau mot de passe">
     <header class="hero">
         <h1>Nouveau mot de passe</h1>
-        <p>Choisis un mot de passe d’au moins 8 caractères.</p>
+        <p>Choisissez un mot de passe d’au moins 8 caractères, avec au moins un chiffre.</p>
     </header>
 
     <form method="POST" action="{{ route('password.store') }}">

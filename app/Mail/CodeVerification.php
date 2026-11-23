@@ -17,7 +17,7 @@ class CodeVerification extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: $this->code.' est ton code CotaTrans');
+        return new Envelope(subject: $this->code.' est votre code CotaTrans');
     }
 
     public function content(): Content

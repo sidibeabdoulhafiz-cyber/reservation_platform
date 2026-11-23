@@ -1,6 +1,6 @@
 <section>
     <h2>Mes données personnelles</h2>
-    <p class="hint">Tu gardes le contrôle sur tes informations.</p>
+    <p class="hint">Vous gardez le contrôle sur vos informations.</p>
 
     <div class="data-actions">
         <a href="{{ route('profile.export') }}" class="btn btn-ghost btn-sm"><x-ico name="arrow-right" size="16" style="transform:rotate(90deg)" /> Télécharger mes données</a>
@@ -13,7 +13,7 @@
 
     <details class="delete-box" @if ($errors->userDeletion->isNotEmpty()) open @endif>
         <summary>Supprimer mon compte et mes données</summary>
-        <p class="hint">Ton nom, ton e-mail, ton téléphone, les noms de tes passagers et les captures de reçus seront <b>définitivement effacés</b>. Les montants payés restent dans la comptabilité, de façon anonyme. Cette action est irréversible.</p>
+        <p class="hint">Votre nom, votre e-mail, votre téléphone, les noms de vos passagers et les captures de reçus seront <b>définitivement effacés</b>. Les montants payés restent dans la comptabilité, de façon anonyme. Cette action est irréversible.</p>
         <p class="hint">Impossible tant qu’une réservation est en cours ou qu’un voyage est à venir.</p>
 
         <form method="post" action="{{ route('profile.destroy') }}" style="margin-top:12px">
@@ -22,7 +22,7 @@
 
             <label>
                 Mot de passe
-                <input id="password_suppression" name="password" type="password" autocomplete="current-password" placeholder="Pour confirmer, saisis ton mot de passe">
+                <input id="password_suppression" name="password" type="password" autocomplete="current-password" placeholder="Pour confirmer, saisissez votre mot de passe">
             </label>
             <x-input-error :messages="$errors->userDeletion->get('password')" class="err" />
 

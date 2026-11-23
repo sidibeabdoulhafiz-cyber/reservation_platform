@@ -21,7 +21,7 @@ class BilletsConfirmes extends Mailable
     {
         $evt = $this->reservation->evenement();
 
-        return new Envelope(subject: '🎟️ Tes billets pour '.($evt?->titre ?? 'ton événement').' ('.$this->reservation->ref.')');
+        return new Envelope(subject: 'Vos billets pour '.($evt?->titre ?? 'votre événement').' ('.$this->reservation->ref.')');
     }
 
     public function content(): Content

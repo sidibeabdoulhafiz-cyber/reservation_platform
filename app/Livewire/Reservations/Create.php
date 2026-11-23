@@ -329,7 +329,7 @@ class Create extends Component
             ->layoutData([
                 'description' => 'Transport aller-retour en car pour '.$evt->titre.' ('.$evt->lieu.', '.$evt->ville.', '.$date.')'
                     .($prixMin ? ', dès '.number_format((int) $prixMin, 0, ',', ' ').' FCFA' : '')
-                    .'. Ramassage dans ton quartier, paiement Mobile Money, billet QR. Réserve sur CotaTrans.',
+                    .'. Ramassage dans votre quartier, paiement Mobile Money, billet QR. Réservez sur CotaTrans.',
                 'ogImage' => $evt->imageUrl() ? url($evt->imageUrl()) : null,
                 'ogType' => 'event',
                 'canonical' => route('evenements.show', $evt),

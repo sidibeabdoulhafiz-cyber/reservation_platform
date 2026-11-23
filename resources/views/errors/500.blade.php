@@ -1,1 +1,1 @@
-@include('errors.cotatrans', ['code' => '500', 'titre' => 'Petit souci de notre côté', 'texte' => 'Une erreur inattendue est survenue. Notre équipe est prévenue. Réessaie dans un instant.', 'recharger' => '1'])
+@include('errors.cotatrans', ['code' => '500', 'titre' => 'Petit souci de notre côté', 'texte' => 'Une erreur inattendue est survenue. Notre équipe est prévenue. Réessayez dans un instant.', 'recharger' => '1'])

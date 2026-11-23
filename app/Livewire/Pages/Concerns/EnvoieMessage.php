@@ -30,7 +30,7 @@ trait EnvoieMessage
         $cle = 'message-site:'.request()->ip();
         if (RateLimiter::tooManyAttempts($cle, 5)) {
             throw ValidationException::withMessages([
-                'message' => 'Trop d’envois en peu de temps. Réessaie dans '.ceil(RateLimiter::availableIn($cle) / 60).' minutes.',
+                'message' => 'Trop d’envois en peu de temps. Réessayez dans '.ceil(RateLimiter::availableIn($cle) / 60).' minutes.',
             ]);
         }
         RateLimiter::hit($cle, 3600);
@@ -41,7 +41,9 @@ trait EnvoieMessage
 
         try {
             Mail::to($destinataire)->send(new NouveauMessage($message));
-            Mail::to($message->email, $message->nom)->send(new AccuseReception($message));
+            if (\App\Support\Notifier::actif('mail_accuse_reception')) {
+                Mail::to($message->email, $message->nom)->send(new AccuseReception($message));
+            }
         } catch (Throwable $e) {
             report($e); // Le message reste enregistré dans l'admin même si l'e-mail échoue.
         }

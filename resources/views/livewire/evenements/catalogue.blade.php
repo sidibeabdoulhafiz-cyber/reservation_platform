@@ -31,15 +31,13 @@
         <div class="in">
             <div class="hero-text">
                 <p class="hero-kicker">Transport événementiel à Abidjan</p>
-                <h1>Zéro stress, zéro retard.<span class="h1-sub">Ton aller-retour en car pour tes événements et sorties.</span></h1>
-                <p class="hero-long">Réserve ton aller-retour en car vers ton concert, ton festival ou ton match. Ramassage près de chez toi, un billet QR par passager.</p>
+                <h1>Zéro stress, zéro retard.<span class="h1-sub">Votre aller-retour en car pour vos événements et sorties.</span></h1>
+                <p class="hero-long">Concert, festival ou match : réservez votre place dans un car qui passe près de chez vous et vous ramène après l’événement. Un billet QR par passager.</p>
 
-                <form class="search" role="search" wire:submit="$refresh" onsubmit="document.getElementById('evenements').scrollIntoView()">
-                    <label for="q" class="sr">Rechercher un événement</label>
-                    <x-ico name="search" size="22" class="search-ico" />
-                    <input id="q" type="search" wire:model.live.debounce.400ms="q" placeholder="Artiste, événement, lieu…" autocomplete="off" enterkeyhint="search">
-                    <button type="submit" class="btn">Rechercher</button>
-                </form>
+                <div class="hero-cta">
+                    <a href="#evenements" class="btn btn-lg">Voir les événements <x-ico name="arrow-right" size="18" /></a>
+                    <a href="#comment-ca-marche" class="btn btn-lg btn-ghost-light">Comment ça marche</a>
+                </div>
 
                 <ul class="hero-points">
                     <li><x-ico name="check-circle" size="18" /> Aller et retour inclus</li>
@@ -71,9 +69,18 @@
         <div class="sec-head">
             <div>
                 <h2 class="sec-title">Événements disponibles</h2>
-                <p class="sec-lead" style="margin:0">Choisis ton événement, on s’occupe du trajet.</p>
+                <p class="sec-lead" style="margin:0">Choisissez votre événement, on s’occupe du trajet.</p>
             </div>
         </div>
+
+        <form class="search" role="search" wire:submit="$refresh">
+            <label for="q" class="sr">Rechercher un événement</label>
+            <x-ico name="search" size="20" class="search-ico" />
+            <input id="q" type="search" wire:model.live.debounce.400ms="q" placeholder="Rechercher un artiste, un événement, un lieu…" autocomplete="off" enterkeyhint="search">
+            @if ($q !== '')
+                <button type="button" class="search-x" wire:click="$set('q', '')" aria-label="Effacer la recherche"><x-ico name="x" size="18" /></button>
+            @endif
+        </form>
 
         <div class="toolbar" role="group" aria-label="Filtrer les événements">
             @if (count($cats))
@@ -109,7 +116,7 @@
                 <div class="panel empty">
                     <x-ico name="calendar" size="34" />
                     <h3>{{ $filtre ? 'Aucun événement ne correspond' : 'Aucun événement pour le moment' }}</h3>
-                    <p class="hint">{{ $filtre ? 'Essaie un autre mot-clé, une autre catégorie ou une autre période.' : 'Les prochains départs seront publiés ici très bientôt.' }}</p>
+                    <p class="hint">{{ $filtre ? 'Essayez un autre mot-clé, une autre catégorie ou une autre période.' : 'Les prochains départs seront publiés ici très bientôt.' }}</p>
                     @if ($filtre)
                         <button type="button" class="btn btn-ghost" style="margin-top:12px" wire:click="effacer">Voir tous les événements</button>
                     @endif
@@ -167,16 +174,16 @@
     <section id="comment-ca-marche" class="bleed sec-white">
         <div class="in">
             <h2 class="sec-title" data-anim>Comment ça marche ?</h2>
-            <p class="sec-lead" data-anim>De ton canapé jusqu’à l’événement : 4 arrêts, 2 minutes.</p>
+            <p class="sec-lead" data-anim>De chez vous jusqu’à l’événement : 4 étapes, 2 minutes.</p>
 
             <div class="trajet-how" data-anim>
                 <div class="rt-road" aria-hidden="true"><i class="rt-fill"></i><span class="rt-bus"><x-ico name="bus" size="22" /></span></div>
                 <ol class="rt-stops">
                     @foreach ([
-                        ['search', 'Choisis ton événement', 'Concert, festival, match : cherche par nom, lieu ou date.', '30 s'],
-                        ['pin', 'Ton arrêt, tes amis', 'Prends l’arrêt le plus proche et ajoute tes passagers par leur nom.', '1 min'],
-                        ['wallet', 'Paie en Mobile Money', 'Un seul paiement Wave pour tout le groupe, reçu lu automatiquement.', '30 s'],
-                        ['qr', 'Monte à bord', 'Un QR code par passager, scanné à l’aller puis au retour.', 'Jour J'],
+                        ['search', 'Choisissez l’événement', 'Concert, festival, match : recherchez par nom, lieu ou catégorie.', '30 s'],
+                        ['pin', 'Votre arrêt, vos amis', 'Prenez l’arrêt le plus proche et ajoutez vos passagers par leur nom.', '1 min'],
+                        ['wallet', 'Payez en Mobile Money', 'Un seul paiement Wave pour tout le groupe, reçu lu automatiquement.', '30 s'],
+                        ['qr', 'Montez à bord', 'Un QR code par passager, scanné à l’aller puis au retour.', 'Jour J'],
                     ] as $i => [$ico, $titre, $texte, $duree])
                         <li class="rt-stop" style="--i: {{ $i }}">
                             <span class="rt-dot"><x-ico :name="$ico" size="22" /></span>
@@ -198,11 +205,11 @@
     {{-- 5. Avantages --}}
     <section id="avantages" class="sec">
         <h2 class="sec-title" data-anim>Pourquoi CotaTrans ?</h2>
-        <p class="sec-lead" data-anim>Tu profites de l’événement, on gère le trajet.</p>
+        <p class="sec-lead" data-anim>Vous profitez de l’événement, on gère le trajet.</p>
         <div class="benefits">
-            <div class="benefit" data-anim><span class="b-ico"><x-ico name="route" size="24" /></span><h3>Ramassage près de chez toi</h3><p>Un point de rassemblement principal et des arrêts dans les quartiers traversés, avec l’heure de passage.</p></div>
-            <div class="benefit" data-anim><span class="b-ico"><x-ico name="bus" size="24" /></span><h3>Retour garanti</h3><p>Fini la chasse au taxi à la sortie : ton car te ramène après l’événement.</p></div>
-            <div class="benefit" data-anim><span class="b-ico"><x-ico name="users" size="24" /></span><h3>Pratique en groupe</h3><p>Réserve pour tes amis en une fois. Chacun reçoit son propre billet.</p></div>
+            <div class="benefit" data-anim><span class="b-ico"><x-ico name="route" size="24" /></span><h3>Ramassage près de chez vous</h3><p>Un point de rassemblement principal et des arrêts dans les quartiers traversés, avec l’heure de passage.</p></div>
+            <div class="benefit" data-anim><span class="b-ico"><x-ico name="bus" size="24" /></span><h3>Retour garanti</h3><p>Fini la chasse au taxi à la sortie : votre car vous ramène après l’événement.</p></div>
+            <div class="benefit" data-anim><span class="b-ico"><x-ico name="users" size="24" /></span><h3>Pratique en groupe</h3><p>Réservez pour vos amis en une fois. Chacun reçoit son propre billet.</p></div>
             <div class="benefit" data-anim><span class="b-ico"><x-ico name="ticket" size="24" /></span><h3>Prix fixe, sans surprise</h3><p>Le prix affiché comprend l’aller et le retour. Rien à payer à bord.</p></div>
         </div>
     </section>
@@ -211,14 +218,14 @@
     <section class="bleed trust">
         <div class="in">
             <div class="trust-head" data-anim>
-                <h2>Voyage en toute confiance</h2>
+                <h2>Voyagez en toute confiance</h2>
                 <p>Chaque étape est contrôlée, du paiement à la montée dans le car.</p>
             </div>
             <ul class="trust-list">
                 <li data-anim><x-ico name="shield" size="26" /><div><b>Paiements vérifiés</b><span>Chaque paiement est contrôlé par notre équipe avant l’émission des billets.</span></div></li>
                 <li data-anim><x-ico name="qr" size="26" /><div><b>Billets infalsifiables</b><span>Un QR code unique par passager, scanné à la montée de l’aller et du retour.</span></div></li>
                 <li data-anim><x-ico name="users" size="26" /><div><b>Liste des passagers à bord</b><span>L’agent connaît les passagers attendus à chaque arrêt.</span></div></li>
-                <li data-anim><x-ico name="headset" size="26" /><div><b>Une équipe joignable</b><span>Une question avant ou pendant le trajet ? On te répond.</span></div></li>
+                <li data-anim><x-ico name="headset" size="26" /><div><b>Une équipe joignable</b><span>Une question avant ou pendant le trajet ? Nous vous répondons.</span></div></li>
             </ul>
         </div>
     </section>
@@ -226,8 +233,8 @@
     {{-- 7. Appel à l'action --}}
     <section class="cta-band" data-anim>
         <div>
-            <h2>Prêt pour ton prochain événement ?</h2>
-            <p>{{ auth()->check() ? 'Réserve ta place maintenant : les cars se remplissent vite.' : 'Crée ton compte en 30 secondes et réserve ta place, ou celles de tes amis.' }}</p>
+            <h2>Prêt pour votre prochain événement ?</h2>
+            <p>{{ auth()->check() ? 'Réservez votre place maintenant : les cars se remplissent vite.' : 'Créez votre compte en 30 secondes et réservez votre place, ou celles de vos amis.' }}</p>
         </div>
         <div class="cta-actions">
             @guest
@@ -239,8 +246,19 @@
     </div>
 
     <style>
+        /* Recherche dans la section événements */
+        .search { position: relative; display: flex; align-items: center; gap: 10px; background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 0 8px 0 16px; margin: 0 0 6px; min-height: 54px; transition: border-color .15s, box-shadow .15s; }
+        .search:focus-within { border-color: var(--brand); box-shadow: 0 0 0 4px rgba(12,65,115,.12); }
+        .search .search-ico { color: var(--muted); flex: none; }
+        .search input { flex: 1; min-width: 0; border: 0; outline: none; font: 400 16px var(--body); color: var(--fg); padding: 14px 0; background: transparent; }
+        .search input::-webkit-search-cancel-button { display: none; }
+        .search-x { flex: none; width: 38px; height: 38px; border: 0; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; cursor: pointer; }
+        .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 6px 0 22px; }
+        .btn-ghost-light { background: rgba(255,255,255,.12); color: #fff; border: 1.5px solid rgba(255,255,255,.35); box-shadow: none; }
+        .btn-ghost-light:hover { background: rgba(255,255,255,.22); color: #fff; }
+        @media (max-width: 760px) { .hero-cta .btn { flex: 1 1 auto; justify-content: center; } .hero-cta .btn-ghost-light { display: none; } .hero-cta .btn:first-child { width: 100%; } }
         /* Barre de filtres (catégories + période), collante au défilement */
-        .toolbar { position: sticky; top: 74px; z-index: 20; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: space-between; padding: 10px 0; margin: -6px 0 18px; background: var(--bg); }
+        .toolbar { position: sticky; top: 74px; z-index: 20; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: space-between; padding: 10px 0; margin: 0 0 18px; background: var(--bg); }
         .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px; margin: -2px; min-width: 0; flex: 1; }
         .chips::-webkit-scrollbar { display: none; }
         .chip { display: inline-flex; align-items: center; gap: 7px; flex: none; min-height: 42px; padding: 8px 15px; border-radius: 99px; border: 1.5px solid var(--line); background: #fff; color: var(--fg); font: 600 14.5px var(--body); cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
@@ -254,7 +272,7 @@
         @media (max-width: 760px) {
             .toolbar { top: 62px; margin-left: -16px; margin-right: -16px; padding: 10px 16px; flex-wrap: nowrap; box-shadow: 0 6px 12px -10px rgba(12,65,115,.35); }
             .chip { min-height: 40px; padding: 7px 13px; font-size: 14px; }
-            .quand { padding: 0 8px; } .quand .ico { display: none; } .quand select { field-sizing: content; max-width: 104px; font-size: 14px; }
+            .quand { padding: 0 8px; } .quand .ico { display: none; } .quand select { field-sizing: content; max-width: 130px; font-size: 14px; }
             .hero-long { display: none; }
             .hero-home .hero-text h1 { margin-bottom: 22px; }
             .hero-home .in { padding-top: 32px !important; padding-bottom: 40px !important; }
@@ -316,21 +334,11 @@
         .hero-home p { font-size: clamp(1.05rem, 2.2vw, 1.25rem); line-height: 1.55; color: #e3ebf5; margin: 0 0 28px; max-width: 54ch; }
         .hero-illu { position: absolute; right: -40px; bottom: 0; width: min(56vw, 640px); height: auto; opacity: .95; }
         @media (max-width: 860px) { .hero-illu { opacity: .22; width: 120vw; right: -30vw; } }
-        .search { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 16px; padding: 7px 7px 7px 16px; box-shadow: 0 16px 40px rgba(4, 25, 50, .3); max-width: 560px; }
-        .search .search-ico { color: var(--muted); }
-        .search input { flex: 1; min-width: 0; border: 0; outline: none; font: 400 17px var(--body); color: var(--fg); padding: 12px 4px; background: transparent; }
-        .search input::-webkit-search-cancel-button { cursor: pointer; }
-        .search .btn { min-height: 50px; border-radius: 12px; }
-        .search:focus-within { box-shadow: 0 0 0 4px rgba(251,114,18,.35), 0 16px 40px rgba(4, 25, 50, .3); }
         .hero-points { list-style: none; padding: 0; margin: 24px 0 0; display: flex; flex-wrap: wrap; gap: 10px 24px; font-weight: 500; color: #e3ebf5; }
         .hero-points li { display: inline-flex; align-items: center; gap: 8px; }
         .hero-points .ico { color: var(--accent); }
         @media (max-width: 600px) {
             .hero-home .in { padding-top: 44px; padding-bottom: 52px; }
-            .search { padding-left: 12px; }
-            .search .btn { padding: 0 16px; }
-            .search .btn { font-size: 0; gap: 0; width: 50px; }
-            .search .btn::before { content: ''; width: 20px; height: 20px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E") center / contain no-repeat; }
         }
 
         /* Reprise de réservation */
@@ -343,7 +351,7 @@
 
         /* Sections */
         .sec { padding: 64px 0 24px; }
-        .sec-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 28px; }
+        .sec-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 18px; }
         .filters { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
         .filters::-webkit-scrollbar { display: none; }
         .result-line { color: var(--muted); margin: -12px 0 20px; }

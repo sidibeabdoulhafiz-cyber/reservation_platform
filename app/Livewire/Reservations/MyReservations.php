@@ -9,17 +9,12 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
-use Livewire\Attributes\Url;
 use Livewire\Component;
 
 #[Layout('components.layouts.site')]
 #[Title('Mes réservations')]
 class MyReservations extends Component
 {
-    /** Onglet : a-venir, a-finaliser, historique. */
-    #[Url(as: 'onglet', except: 'a-venir')]
-    public string $onglet = 'a-venir';
-
     #[Computed]
     public function reservations(): Collection
     {
@@ -60,20 +55,7 @@ class MyReservations extends Component
         return $this->aVenir->first();
     }
 
-    public function choisir(string $onglet): void
-    {
-        $this->onglet = in_array($onglet, ['a-venir', 'a-finaliser', 'historique'], true) ? $onglet : 'a-venir';
-    }
-
-    public function mount(): void
-    {
-        // Sans voyage à venir mais avec une réservation à payer : on ouvre directement « À finaliser ».
-        if ($this->onglet === 'a-venir' && $this->aVenir->isEmpty() && $this->aFinaliser->isNotEmpty()) {
-            $this->onglet = 'a-finaliser';
-        }
-    }
-
-    private function dateDepart(Reservation $r)
+    public function dateDepart(Reservation $r)
     {
         return $r->depart?->depart_at ?? $r->evenement()?->debut_at;
     }

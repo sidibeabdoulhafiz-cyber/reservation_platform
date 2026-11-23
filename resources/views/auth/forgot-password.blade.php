@@ -1,7 +1,7 @@
 <x-guest-layout title="Mot de passe oublié">
     <header class="hero">
         <h1>Mot de passe oublié ?</h1>
-        <p>Indique l’e-mail de ton compte : on t’envoie un lien pour choisir un nouveau mot de passe.</p>
+        <p>Indiquez l’e-mail de votre compte : nous vous envoyons un lien pour choisir un nouveau mot de passe.</p>
     </header>
 
     @if (session('status'))
@@ -19,6 +19,6 @@
         <button class="cta" type="submit">Envoyer le lien</button>
     </form>
 
-    <p class="hint" style="margin-top:14px;text-align:center">Pense à vérifier tes spams. Le lien est valable 60 minutes.</p>
+    <p class="hint" style="margin-top:14px;text-align:center">Pensez à vérifier vos spams. Le lien est valable 60 minutes.</p>
     <p class="auth-alt"><a href="{{ route('login') }}">← Retour à la connexion</a></p>
 </x-guest-layout>

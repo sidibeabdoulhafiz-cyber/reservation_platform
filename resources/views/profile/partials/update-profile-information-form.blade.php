@@ -1,6 +1,6 @@
 <section>
     <h2>Informations</h2>
-    <p class="hint">Ces coordonnées servent à t’envoyer tes billets et les infos de départ.</p>
+    <p class="hint">Ces coordonnées servent à vous envoyer vos billets et les informations de départ.</p>
 
     <form method="post" action="{{ route('profile.update') }}" style="margin-top:12px">
         @csrf

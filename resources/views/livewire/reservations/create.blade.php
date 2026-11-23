@@ -28,7 +28,7 @@
                 @endif
             </ul>
             <x-partage :url="route('evenements.show', $evt)" titre="Partager"
-                :texte="'🚌 '.$evt->titre.' · '.$evt->debut_at->locale('fr')->translatedFormat('j F').' à '.$evt->lieu.' : réserve ton aller-retour en car avec CotaTrans'" />
+                :texte="'🚌 '.$evt->titre.' · '.$evt->debut_at->locale('fr')->translatedFormat('j F').' à '.$evt->lieu.' : réservez votre aller-retour en car avec CotaTrans'" />
             @if ($evt->description)
                 <details class="desc">
                     <summary>À propos de l’événement</summary>
@@ -39,7 +39,7 @@
     </header>
 
     @if (! $this->open)
-        <div class="alert alert-warn"><x-ico name="info" /> Les réservations sont fermées pour le moment. Reviens un peu plus tard.</div>
+        <div class="alert alert-warn"><x-ico name="info" /> Les réservations sont fermées pour le moment. Revenez un peu plus tard.</div>
     @endif
 
     @if ($errors->has('reservation') || $errors->has('quantite') || $errors->has('depart_id') || $errors->has('zone_id') || $errors->has('type_billet_id'))
@@ -57,7 +57,7 @@
         <div class="panel empty">
             <x-ico name="calendar" size="34" />
             <h3>Pas encore de départ ouvert</h3>
-            <p class="hint">Les places pour cet événement ne sont pas encore en vente. Reviens bientôt.</p>
+            <p class="hint">Les places pour cet événement ne sont pas encore en vente. Revenez bientôt.</p>
             <a href="{{ route('home') }}#evenements" class="btn btn-ghost" style="margin-top:12px">Voir d’autres événements</a>
         </div>
     @else
@@ -73,7 +73,7 @@
                 @if ($transport)
                     @if ($this->departs->count() > 1)
                         <fieldset>
-                            <legend><span class="num">{{ $n++ }}</span> Choisis ton départ</legend>
+                            <legend><span class="num">{{ $n++ }}</span> Choisissez votre départ</legend>
                             <div class="chips">
                                 @foreach ($this->departs as $d)
                                     @php $reste = $d->placesRestantes(); @endphp
@@ -90,8 +90,8 @@
                     @endif
 
                     <fieldset>
-                        <legend><span class="num">{{ $n++ }}</span> Où montes-tu ?</legend>
-                        <p class="hint step-hint">Le car passe par ces arrêts, dans cet ordre. Choisis le plus proche de chez toi.</p>
+                        <legend><span class="num">{{ $n++ }}</span> Où montez-vous ?</legend>
+                        <p class="hint step-hint">Le car passe par ces arrêts, dans cet ordre. Choisissez le plus proche de chez vous.</p>
                         <ol class="route" aria-label="Itinéraire">
                             @foreach ($this->tarifs as $t)
                                 <li class="stop {{ $t->principal ? 'principal' : '' }}" wire:key="z-{{ $t->id }}">
@@ -152,10 +152,10 @@
                         @foreach ($passagers as $i => $nomPax)
                             <li wire:key="pax-{{ $i }}">
                                 <label class="field">
-                                    <span>{{ $i === 0 ? 'Passager 1 · toi' : 'Passager '.($i + 1).' · invité' }}</span>
+                                    <span>{{ $i === 0 ? 'Passager 1 · vous' : 'Passager '.($i + 1).' · invité' }}</span>
                                     <span class="pax-input">
                                         <input type="text" wire:model.blur="passagers.{{ $i }}" maxlength="120" autocomplete="{{ $i === 0 ? 'name' : 'off' }}"
-                                               placeholder="{{ $i === 0 ? ($this->nomPayeur() ?: 'Ton nom complet') : 'Nom et prénom' }}">
+                                               placeholder="{{ $i === 0 ? ($this->nomPayeur() ?: 'Votre nom complet') : 'Nom et prénom' }}">
                                         @if ($i > 0)
                                             <button type="button" class="pax-del" wire:click="retirerPassager({{ $i }})" aria-label="Retirer le passager {{ $i + 1 }}"><x-ico name="x" size="18" /></button>
                                         @endif
@@ -168,7 +168,7 @@
                     @if ($quantite < $max)
                         <button type="button" class="add-pax" wire:click="increment"><x-ico name="plus" size="18" /> Ajouter un passager</button>
                     @endif
-                    <p class="hint"><x-ico name="info" size="15" style="vertical-align:-2px" /> Tes invités n’ont pas besoin de compte. Chacun reçoit son propre billet QR{{ $transport ? ', valable pour l’aller et le retour' : '' }}.</p>
+                    <p class="hint"><x-ico name="info" size="15" style="vertical-align:-2px" /> Vos invités n’ont pas besoin de compte. Chacun reçoit son propre billet QR{{ $transport ? ', valable pour l’aller et le retour' : '' }}.</p>
                 </fieldset>
 
                 @guest
@@ -178,17 +178,17 @@
                          :class="{ 'shake': secoue }">
                         <div class="ident-banner">
                             <x-ico name="user" size="20" />
-                            <div><b>Dernière étape : ton compte</b><span>30 secondes, pour recevoir tes billets et les retrouver à tout moment.</span></div>
+                            <div><b>Dernière étape : votre compte</b><span>30 secondes, pour recevoir vos billets et les retrouver à tout moment.</span></div>
                         </div>
                         <fieldset>
-                            <legend><span class="num">{{ $n++ }}</span> Ton compte</legend>
+                            <legend><span class="num">{{ $n++ }}</span> Votre compte</legend>
                             <div class="seg" role="tablist">
                                 <button type="button" role="tab" class="{{ $mode === 'inscription' ? 'on' : '' }}" wire:click="$set('mode', 'inscription')">Je suis nouveau</button>
                                 <button type="button" role="tab" class="{{ $mode === 'connexion' ? 'on' : '' }}" wire:click="$set('mode', 'connexion')">J’ai déjà un compte</button>
                             </div>
 
                             @if ($mode === 'inscription')
-                                <p class="hint" style="margin:0 0 14px">Un compte est nécessaire pour retrouver tes billets. Il est créé en même temps que ta réservation.</p>
+                                <p class="hint" style="margin:0 0 14px">Un compte est nécessaire pour retrouver vos billets. Il est créé en même temps que votre réservation.</p>
                                 <div class="grid2">
                                     <label class="field">Nom complet
                                         <input type="text" wire:model.blur="nom" autocomplete="name" placeholder="Awa Koné">
@@ -203,7 +203,7 @@
                                         @error('email') <span class="err">{{ $message }}</span> @enderror
                                     </label>
                                     <label class="field">Mot de passe
-                                        <input type="password" wire:model="password" autocomplete="new-password" placeholder="8 caractères minimum">
+                                        <input type="password" wire:model="password" autocomplete="new-password" placeholder="8 caractères, dont un chiffre">
                                         @error('password') <span class="err">{{ $message }}</span> @enderror
                                     </label>
                                 </div>
@@ -228,21 +228,21 @@
             {{-- Récapitulatif --}}
             <aside class="side">
                 <div class="recap panel">
-                    <h3 class="recap-title">Ton trajet</h3>
+                    <h3 class="recap-title">Votre trajet</h3>
                     @if ($transport && $depart)
                         <ol class="legs-list">
                             <li>
                                 <span class="leg-tag">Aller</span>
                                 <div>
                                     <b>{{ $depart->depart_at->locale('fr')->translatedFormat('D j M') }} · {{ $tarif?->heure() ?? $depart->depart_at->format('H\hi') }}</b>
-                                    <small>{{ $tarif?->zone?->nom ?? 'Ton arrêt' }}{{ $tarif?->point_rdv ? ' ('.$tarif->point_rdv.')' : '' }} → {{ $evt->lieu }}</small>
+                                    <small>{{ $tarif?->zone?->nom ?? 'Votre arrêt' }}{{ $tarif?->point_rdv ? ' ('.$tarif->point_rdv.')' : '' }} → {{ $evt->lieu }}</small>
                                 </div>
                             </li>
                             <li>
                                 <span class="leg-tag ret">Retour</span>
                                 <div>
                                     <b>{{ $depart->retour_at ? $depart->retour_at->locale('fr')->translatedFormat('D j M · H\hi') : 'Après l’événement' }}</b>
-                                    <small>{{ $evt->lieu }} → {{ $tarif?->zone?->nom ?? 'ton arrêt' }}</small>
+                                    <small>{{ $evt->lieu }} → {{ $tarif?->zone?->nom ?? 'votre arrêt' }}</small>
                                 </div>
                             </li>
                         </ol>

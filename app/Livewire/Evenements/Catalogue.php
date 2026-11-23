@@ -117,7 +117,7 @@ class Catalogue extends Component
         return view('livewire.evenements.catalogue')
             ->title('')
             ->layoutData([
-                'description' => 'CotaTrans : réserve ton transport aller-retour en car pour tes événements et sorties à Abidjan (concerts, festivals, matchs, journées récréatives). Ramassage près de chez toi, paiement Mobile Money, billet QR.',
+                'description' => 'CotaTrans : réservez votre transport aller-retour en car pour vos événements et sorties à Abidjan (concerts, festivals, matchs, journées récréatives). Ramassage près de chez toi, paiement Mobile Money, billet QR.',
                 'canonical' => route('home'),
             ]);
     }

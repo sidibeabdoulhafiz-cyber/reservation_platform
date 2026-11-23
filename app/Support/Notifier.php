@@ -9,6 +9,7 @@ use App\Mail\RappelDepart;
 use App\Mail\ReservationCreee;
 use App\Models\Paiement;
 use App\Models\Reservation;
+use App\Models\Setting;
 use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
@@ -19,13 +20,25 @@ use Throwable;
  */
 final class Notifier
 {
+    /** Un e-mail facultatif peut être coupé dans Réglages pour économiser le quota d'envoi. */
+    public static function actif(string $cle): bool
+    {
+        return (string) Setting::get($cle, '1') === '1';
+    }
+
     public static function reservationCreee(Reservation $reservation): void
     {
+        if (! self::actif('mail_reservation_creee')) {
+            return;
+        }
         self::envoyer($reservation, new ReservationCreee($reservation));
     }
 
     public static function paiementRecu(Paiement $paiement): void
     {
+        if (! self::actif('mail_paiement_recu')) {
+            return;
+        }
         self::envoyer($paiement->reservation, new PaiementRecu($paiement->reservation));
     }
 
@@ -41,6 +54,9 @@ final class Notifier
 
     public static function rappelDepart(Reservation $reservation, string $moment): void
     {
+        if (! self::actif($moment === 'veille' ? 'mail_rappel_veille' : 'mail_rappel_depart')) {
+            return;
+        }
         self::envoyer($reservation, new RappelDepart($reservation, $moment));
     }
 

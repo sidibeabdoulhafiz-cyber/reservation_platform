@@ -2,7 +2,7 @@
 <x-mail::message>
 # Plus qu’une étape, {{ \Illuminate\Support\Str::of($r->user->name)->before(' ') }} !
 
-Ta réservation pour **{{ $evt?->titre }}** est enregistrée. Tes places sont bloquées{{ $r->expire_at ? ' jusqu’à '.$r->expire_at->format('H\hi') : '' }} : paie maintenant pour les confirmer.
+Votre réservation pour **{{ $evt?->titre }}** est enregistrée. Vos places sont bloquées{{ $r->expire_at ? ' jusqu’à '.$r->expire_at->format('H\hi') : '' }} : payez maintenant pour les confirmer.
 
 <x-mail::panel>
 **Réservation :** {{ $r->ref }}<br>

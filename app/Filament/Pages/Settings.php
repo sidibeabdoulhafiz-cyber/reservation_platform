@@ -94,8 +94,18 @@ class Settings extends Page
             'site_ouvert' => (string) Setting::get('site_ouvert', '1') === '1',
             'hero_image' => Setting::get('hero_image') ?: null,
             ...collect([...array_keys(self::RESEAUX), ...self::TEXTES])->mapWithKeys(fn ($k) => [$k => Setting::get($k, '')])->all(),
+            ...collect(self::MAILS_FACULTATIFS)->mapWithKeys(fn ($lib, $k) => [$k => (string) Setting::get($k, '1') === '1'])->all(),
         ]);
     }
+
+    /** E-mails qu'on peut couper pour économiser le quota d'envoi (clé => libellé). */
+    public const MAILS_FACULTATIFS = [
+        'mail_reservation_creee' => 'Réservation enregistrée (lien pour payer)',
+        'mail_paiement_recu' => 'Preuve de paiement reçue',
+        'mail_rappel_veille' => 'Rappel la veille du départ',
+        'mail_rappel_depart' => 'Rappel 2 h avant le départ',
+        'mail_accuse_reception' => 'Accusé de réception des formulaires',
+    ];
 
     /** Réglages texte simples enregistrés tels quels (clé => libellé). */
     public const RESEAUX = [
@@ -158,6 +168,12 @@ class Settings extends Page
                         ->placeholder('Bonjour CotaTrans, j’ai une question…')->maxLength(200),
                 ])->columnSpanFull(),
 
+                Section::make('E-mails envoyés aux clients')
+                    ->description('Toujours envoyés : code de vérification, billets, reçu refusé, mot de passe oublié. Les autres peuvent être coupés pour économiser le quota journalier de Brevo (300 e-mails/jour en offre gratuite).')
+                    ->columns(2)
+                    ->schema(collect(self::MAILS_FACULTATIFS)->map(fn ($lib, $k) => Toggle::make($k)->label($lib))->values()->all())
+                    ->columnSpanFull(),
+
                 Section::make('Réseaux sociaux')
                     ->description('Les icônes apparaissent dans le pied de page pour chaque lien renseigné.')
                     ->columns(2)
@@ -204,6 +220,9 @@ class Settings extends Page
         Setting::set('hero_image', $data['hero_image'] ?? '');
         foreach ([...array_keys(self::RESEAUX), ...self::TEXTES] as $cle) {
             Setting::set($cle, trim((string) ($data[$cle] ?? '')));
+        }
+        foreach (array_keys(self::MAILS_FACULTATIFS) as $cle) {
+            Setting::set($cle, ! empty($data[$cle]) ? '1' : '0');
         }
 
         Notification::make()->title('Réglages enregistrés')->success()->send();

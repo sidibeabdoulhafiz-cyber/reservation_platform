@@ -1,10 +1,10 @@
 @php $evt = $r->evenement(); @endphp
 <x-mail::message>
-# Reçu bien reçu ✓
+# Preuve de paiement reçue
 
-Merci {{ \Illuminate\Support\Str::of($r->user->name)->before(' ') }} ! Nous avons bien reçu la preuve de paiement pour **{{ $evt?->titre }}** (réservation {{ $r->ref }}).
+Merci {{ \Illuminate\Support\Str::of($r->user->name)->before(' ') }} ! Nous avons bien reçu votre preuve de paiement pour **{{ $evt?->titre }}** (réservation {{ $r->ref }}).
 
-Notre équipe la vérifie en ce moment. Dès qu’elle est validée, tu reçois tes billets QR code par e-mail. Ils sont aussi disponibles dans « Mes réservations ».
+Notre équipe la vérifie. Dès qu’elle est validée, vous recevez vos billets QR code par e-mail. Ils sont aussi disponibles dans « Mes réservations ».
 
 <x-mail::button :url="route('reservations.show', $r)">
 Suivre ma réservation

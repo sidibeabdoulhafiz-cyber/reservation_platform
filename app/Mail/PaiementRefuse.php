@@ -17,7 +17,7 @@ class PaiementRefuse extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Action requise : ton reçu n’a pas pu être validé ('.$this->reservation->ref.')');
+        return new Envelope(subject: 'Action requise : votre reçu n’a pas pu être validé ('.$this->reservation->ref.')');
     }
 
     public function content(): Content

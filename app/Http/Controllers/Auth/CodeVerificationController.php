@@ -36,12 +36,12 @@ class CodeVerificationController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $request->validate(['code' => ['required', 'string', 'max:12']], ['code.required' => 'Saisis le code à 6 chiffres reçu par e-mail.']);
+        $request->validate(['code' => ['required', 'string', 'max:12']], ['code.required' => 'Saisissez le code à 6 chiffres reçu par e-mail.']);
 
         $user = $request->user();
         $cle = 'code-essai:'.$user->getKey().'|'.$request->ip();
         if (RateLimiter::tooManyAttempts($cle, 10)) {
-            return back()->withErrors(['code' => 'Trop d’essais. Réessaie dans quelques minutes.']);
+            return back()->withErrors(['code' => 'Trop d’essais. Réessayez dans quelques minutes.']);
         }
         RateLimiter::hit($cle, 600);
 
@@ -49,9 +49,9 @@ class CodeVerificationController extends Controller
 
         if ($resultat !== 'ok') {
             return back()->withErrors(['code' => match ($resultat) {
-                'faux' => 'Code incorrect. Vérifie le dernier e-mail reçu.',
-                'bloque' => 'Trop d’erreurs : demande un nouveau code.',
-                default => 'Ce code a expiré : demande un nouveau code.',
+                'faux' => 'Code incorrect. Vérifiez le dernier e-mail reçu.',
+                'bloque' => 'Trop d’erreurs : demandez un nouveau code.',
+                default => 'Ce code a expiré : demandez un nouveau code.',
             }]);
         }
 
@@ -69,9 +69,9 @@ class CodeVerificationController extends Controller
         } catch (\Throwable $e) {
             report($e);
 
-            return back()->withErrors(['code' => 'L’e-mail n’a pas pu partir. Réessaie dans un instant.']);
+            return back()->withErrors(['code' => 'L’e-mail n’a pas pu partir. Réessayez dans un instant.']);
         }
 
-        return back()->with('status', $ok ? 'Nouveau code envoyé.' : 'Patiente une minute avant de redemander un code.');
+        return back()->with('status', $ok ? 'Nouveau code envoyé.' : 'Patientez une minute avant de redemander un code.');
     }
 }

@@ -17,7 +17,7 @@ class PaiementRecu extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Reçu bien reçu : vérification en cours ('.$this->reservation->ref.')');
+        return new Envelope(subject: 'Preuve de paiement reçue : vérification en cours ('.$this->reservation->ref.')');
     }
 
     public function content(): Content

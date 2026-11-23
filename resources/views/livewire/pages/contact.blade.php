@@ -1,16 +1,16 @@
 <div class="page-form">
     <section class="form-intro">
         <p class="kicker">Contact</p>
-        <h1>Une question ? Écris-nous.</h1>
-        <p class="lead-txt">Réservation, paiement, horaires de départ, arrêt : l’équipe CotaTrans te répond rapidement.</p>
+        <h1>Une question ? Écrivez-nous.</h1>
+        <p class="lead-txt">Réservation, paiement, horaires de départ, arrêt : l’équipe CotaTrans vous répond rapidement.</p>
         <ul class="perks">
             <li><x-ico name="clock" /> <span><b>Réponse sous 24 h</b> ouvrées, souvent bien plus vite</span></li>
-            <li><x-ico name="ticket" /> <span>Pour une réservation, indique ta <b>référence RES-…</b></span></li>
+            <li><x-ico name="ticket" /> <span>Pour une réservation, indiquez votre <b>référence RES-…</b></span></li>
             @if (strlen($waNum = preg_replace('/\D/', '', (string) \App\Models\Setting::get('whatsapp_numero'))) >= 8)
-                <li><x-ico name="chat" /> <span>Urgent le jour J ? <a href="https://wa.me/{{ $waNum }}" target="_blank" rel="noopener"><b>Écris-nous sur WhatsApp</b></a></span></li>
+                <li><x-ico name="chat" /> <span>Urgent le jour J ? <a href="https://wa.me/{{ $waNum }}" target="_blank" rel="noopener"><b>Écrivez-nous sur WhatsApp</b></a></span></li>
             @endif
         </ul>
-        <p class="hint">Organisateur d’événement ? <a href="{{ route('organisateurs') }}">Utilise plutôt ce formulaire</a>.</p>
+        <p class="hint">Organisateur d’événement ? <a href="{{ route('organisateurs') }}">Utilisez plutôt ce formulaire</a>.</p>
     </section>
 
     <section class="panel form-card">
@@ -18,11 +18,11 @@
             <div class="done" role="status">
                 <span class="done-ico"><x-ico name="check-circle" size="34" /></span>
                 <h2>Message envoyé !</h2>
-                <p>Merci {{ \Illuminate\Support\Str::of($nom)->before(' ') }}, nous te répondons à <strong>{{ $email }}</strong>.</p>
+                <p>Merci {{ \Illuminate\Support\Str::of($nom)->before(' ') }}, nous vous répondons à <strong>{{ $email }}</strong>.</p>
                 <a href="{{ route('home') }}" class="btn btn-ghost">Retour à l’accueil</a>
             </div>
         @else
-            <h2>Ton message</h2>
+            <h2>Votre message</h2>
             <form wire:submit="envoyer" novalidate>
                 <div class="hp" aria-hidden="true"><label>Site web <input type="text" wire:model="site_web" tabindex="-1" autocomplete="off"></label></div>
                 <div class="grid2">

@@ -19,8 +19,8 @@ class AccuseReception extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(subject: $this->m->estOrganisateur()
-            ? 'CotaTrans a bien reçu ta demande pour « '.$this->m->evenement.' »'
-            : 'CotaTrans a bien reçu ton message');
+            ? 'CotaTrans a bien reçu votre demande pour « '.$this->m->evenement.' »'
+            : 'CotaTrans a bien reçu votre message');
     }
 
     public function content(): Content

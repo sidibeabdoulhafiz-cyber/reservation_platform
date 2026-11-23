@@ -100,6 +100,7 @@ Tout doit être en `[OK]`. Corrige chaque `[A FAIRE]` avant d'aller plus loin.
 1. **Réglages → Paiement** : lien Wave Business, délai de paiement, « Réservations ouvertes ».
 2. **Réglages → E-mails et contact** : e-mail de réception, téléphone, **numéro WhatsApp**. Clique sur **« Envoyer un e-mail de test »**.
 3. **Réglages → Réseaux sociaux** : liens Facebook, Instagram, TikTok…
+   **Réglages → E-mails envoyés aux clients** : coupez les e-mails facultatifs si vous approchez du quota gratuit Brevo (300 par jour). Comptez environ 5 à 6 e-mails par réservation avec tout activé.
 4. **Zones**, **Véhicules**, puis ton premier **Événement** (affiche, catégorie, départs, arrêts, tarifs), puis **Publier**.
 
 ---

@@ -81,12 +81,12 @@ class Suivi extends Component
             'transaction_id' => ['required', 'string', 'min:6', 'max:40'],
             'montant_declare' => ['required', 'integer', 'min:1'],
         ], [
-            'capture.required' => 'Ajoute la capture d’écran du reçu Wave.',
+            'capture.required' => 'Ajoutez la capture d’écran du reçu Wave.',
             'capture.image' => 'Le fichier doit être une image (capture d’écran).',
             'capture.max' => 'L’image ne doit pas dépasser 4 Mo.',
             'transaction_id.required' => 'Recopie l’identifiant de transaction affiché sur le reçu.',
             'transaction_id.min' => 'L’identifiant de transaction semble trop court.',
-            'montant_declare.required' => 'Indique le montant payé.',
+            'montant_declare.required' => 'Indiquez le montant payé.',
             'montant_declare.integer' => 'Le montant doit être un nombre entier en FCFA.',
         ]);
 

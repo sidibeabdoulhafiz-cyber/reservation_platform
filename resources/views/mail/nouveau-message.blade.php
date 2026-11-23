@@ -25,5 +25,5 @@
 Voir dans l’administration
 </x-mail::button>
 
-Réponds directement à cet e-mail pour écrire à {{ $m->nom }}.
+Répondez directement à cet e-mail pour écrire à {{ $m->nom }}.
 </x-mail::message>

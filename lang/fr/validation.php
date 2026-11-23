@@ -34,7 +34,7 @@ return [
         'mixed' => 'Le champ :attribute doit contenir au moins une majuscule et une minuscule.',
         'numbers' => 'Le champ :attribute doit contenir au moins un chiffre.',
         'symbols' => 'Le champ :attribute doit contenir au moins un symbole.',
-        'uncompromised' => 'Ce :attribute est apparu dans une fuite de données. Choisis-en un autre.',
+        'uncompromised' => 'Ce :attribute est apparu dans une fuite de données. Choisissez-en un autre.',
     ],
     'regex' => 'Le format du champ :attribute est invalide.',
     'required' => 'Le champ :attribute est obligatoire.',

@@ -56,8 +56,8 @@ class SubmitPaymentProof
             // La preuve n'est acceptée que si le montant du reçu est exactement le prix de la réservation.
             if ($montantDeclare !== (int) $locked->montant) {
                 throw ValidationException::withMessages([
-                    'montant_declare' => 'Le reçu indique '.self::fcfa($montantDeclare).' mais ta réservation coûte '
-                        .self::fcfa((int) $locked->montant).'. Paie le montant exact, puis envoie le nouveau reçu.',
+                    'montant_declare' => 'Le reçu indique '.self::fcfa($montantDeclare).' mais votre réservation coûte '
+                        .self::fcfa((int) $locked->montant).'. Payez le montant exact, puis envoyez le nouveau reçu.',
                 ]);
             }
 

@@ -124,9 +124,9 @@ class PassagersEtControleTest extends TestCase
 
         $this->actingAs($client)->get(route('reservations.index'))
             ->assertOk()
-            ->assertSee('Prochain départ')
+            ->assertSee('Prochain départ')->assertSee('Afficher mon billet')
             ->assertSee('Concert test')
-            ->assertSee('Retour');
+            ->assertSee('Retour vers');
     }
 
     /** @return array{0: Evenement, 1: Depart, 2: Zone} */

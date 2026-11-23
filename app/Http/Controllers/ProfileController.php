@@ -58,7 +58,7 @@ class ProfileController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Redirect::to('/')->with('status', 'Ton compte et tes données personnelles ont été supprimés.');
+        return Redirect::to('/')->with('status', 'Votre compte et vos données personnelles ont été supprimés.');
     }
 
     /** Téléchargement des données personnelles au format JSON. */

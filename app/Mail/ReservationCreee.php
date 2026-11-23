@@ -17,7 +17,7 @@ class ReservationCreee extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Réservation '.$this->reservation->ref.' : finalise ton paiement');
+        return new Envelope(subject: 'Réservation '.$this->reservation->ref.' : finalisez votre paiement');
     }
 
     public function content(): Content

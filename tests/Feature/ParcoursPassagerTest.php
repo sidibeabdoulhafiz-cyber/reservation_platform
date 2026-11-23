@@ -149,7 +149,7 @@ class ParcoursPassagerTest extends TestCase
             ->set('montant_declare', (int) $r->montant)
             ->call('submitProof')
             ->assertHasNoErrors()
-            ->assertSee('Reçu bien reçu');
+            ->assertSee('Preuve de paiement reçue');
 
         $this->assertSame(ReservationStatus::EnVerification, $r->fresh()->statut);
         Mail::assertSent(PaiementRecu::class);

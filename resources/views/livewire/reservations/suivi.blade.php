@@ -20,11 +20,11 @@
 
     <header class="hero noprint">
         @if ($etape === 'payer')
-            <h1>Paie pour confirmer tes places</h1>
-            <p>Deux étapes : tu paies sur Wave, puis tu nous envoies la capture du reçu.</p>
+            <h1>Payez pour confirmer vos places</h1>
+            <p>Deux étapes : vous payez sur Wave, puis vous nous envoyez la capture du reçu.</p>
         @elseif ($etape === 'attendre')
             <h1>Paiement en vérification</h1>
-            <p>Notre équipe vérifie ton reçu. Tes billets s’affichent ici automatiquement, et tu les reçois par e-mail.</p>
+            <p>Notre équipe vérifie votre reçu. Vos billets s’afficheront ici automatiquement et vous seront envoyés par e-mail.</p>
         @elseif ($etape === 'billets')
             <h1>C’est validé, bon voyage !</h1>
             <p>Un QR code par passager. Il est contrôlé à la montée de l’aller, puis à celle du retour.</p>
@@ -72,7 +72,7 @@
     @if ($etape === 'payer')
         @php $refus = $r->paiements->first(fn ($p) => $p->statut === \App\Enums\PaiementStatus::Refuse); @endphp
         @if ($refus?->motif_refus)
-            <div class="alert alert-err" role="alert"><div><strong>Reçu refusé :</strong> {{ $refus->motif_refus }}<br>Envoie un reçu valide avant la fin du délai.</div></div>
+            <div class="alert alert-err" role="alert"><div><strong>Reçu refusé :</strong> {{ $refus->motif_refus }}<br>Envoyez un reçu valide avant la fin du délai.</div></div>
         @endif
 
         @if ($r->expire_at)
@@ -84,21 +84,21 @@
         @endif
 
         <section class="panel paystep">
-            <div class="ps-head"><span class="num">1</span><h3>Paie {{ number_format($r->montant, 0, ',', ' ') }} FCFA sur Wave</h3></div>
+            <div class="ps-head"><span class="num">1</span><h3>Payez {{ number_format($r->montant, 0, ',', ' ') }} FCFA sur Wave</h3></div>
             @if ($lien = $this->lienWave())
                 <a class="cta wave" href="{{ $lien }}" target="_blank" rel="noopener">
                     <span>Ouvrir Wave et payer</span>
                     <span class="amt">{{ number_format($r->montant, 0, ',', ' ') }} F</span>
                 </a>
-                <p class="hint">Une fois le paiement fait, fais une capture d’écran du reçu et reviens ici.</p>
+                <p class="hint">Une fois le paiement fait, faites une capture d’écran du reçu et revenez ici.</p>
             @else
-                <div class="alert alert-warn">Le lien de paiement n’est pas encore configuré. Contacte l’organisation.</div>
+                <div class="alert alert-warn">Le lien de paiement n’est pas encore configuré. Contactez CotaTrans.</div>
             @endif
         </section>
 
         <form class="panel paystep" wire:submit="submitProof"
               x-data="preuvePaiement({ attendu: {{ (int) $r->montant }}, prix: {{ (int) $r->prix_unitaire }} })">
-            <div class="ps-head"><span class="num">2</span><h3>Envoie la capture du reçu</h3></div>
+            <div class="ps-head"><span class="num">2</span><h3>Envoyez la capture du reçu</h3></div>
 
             <label class="drop" :class="{ filled: apercu }">
                 <input type="file" accept="image/*" x-ref="file" @change="choisir($event)">
@@ -111,7 +111,7 @@
                     <img :src="apercu" alt="Aperçu du reçu">
                     <span>
                         <b x-text="envoi ? 'Envoi… ' + progress + '%' : 'Capture ajoutée ✓'"></b>
-                        <small>Touche pour changer d’image</small>
+                        <small>Touchez pour changer d’image</small>
                     </span>
                 </span>
             </label>
@@ -124,7 +124,7 @@
                     <span class="spin" aria-hidden="true"></span>
                     <span>Lecture du reçu… <strong x-text="lecturePct + '%'"></strong></span>
                 </div>
-                <div class="ocr-ok" x-show="etat === 'lu'"><x-ico name="check-circle" size="18" /> Reçu lu automatiquement. Vérifie les informations ci-dessous.</div>
+                <div class="ocr-ok" x-show="etat === 'lu'"><x-ico name="check-circle" size="18" /> Reçu lu automatiquement. Vérifiez les informations ci-dessous.</div>
                 <div class="ocr-bad" x-show="etat === 'ecart'" role="alert">
                     <x-ico name="alert" size="18" /> <span x-text="message"></span>
                     <button type="button" class="linklike" @click="reinitialiser()">Changer de capture</button>
@@ -158,15 +158,15 @@
         </form>
 
         <p class="hint noprint" style="text-align:center">
-            Tu as changé d’avis ?
+            Vous avez changé d’avis ?
             <button type="button" class="linklike" wire:click="annuler" wire:confirm="Annuler cette réservation et libérer les places ?">Annuler la réservation</button>
         </p>
     @elseif ($etape === 'attendre')
         <section class="panel wait" wire:poll.8s.visible>
             <div class="spinner" aria-hidden="true"></div>
             <div>
-                <h3>Reçu bien reçu ✓</h3>
-                <p class="hint" style="margin:0">En général, la vérification prend quelques minutes. Tu peux fermer cette page : on t’envoie tes billets par e-mail à <strong>{{ auth()->user()->email }}</strong>.</p>
+                <h3>Preuve de paiement reçue</h3>
+                <p class="hint" style="margin:0">En général, la vérification prend quelques minutes. Vous pouvez fermer cette page : vos billets vous seront envoyés par e-mail à <strong>{{ auth()->user()->email }}</strong>.</p>
             </div>
         </section>
     @elseif ($etape === 'billets')
@@ -191,10 +191,10 @@
 
         @if ($evt)
             <div class="panel noprint invite">
-                <h3>Tes amis y vont aussi ?</h3>
-                <p class="hint" style="margin:0">Partage l’événement : ils réservent leur place dans le même car.</p>
+                <h3>Vos amis y vont aussi ?</h3>
+                <p class="hint" style="margin:0">Partagez l’événement : ils réservent leur place dans le même car.</p>
                 <x-partage :url="route('evenements.show', $evt)" titre=""
-                    :texte="'J’ai réservé mon aller-retour pour '.$evt->titre.' avec CotaTrans 🚌 Réserve ta place :'" />
+                    :texte="'J’ai réservé mon aller-retour pour '.$evt->titre.' avec CotaTrans 🚌 Réservez votre place :'" />
             </div>
         @endif
         @if ($evt?->lien_whatsapp)
