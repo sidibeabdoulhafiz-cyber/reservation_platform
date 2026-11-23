@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Storage;
 class Evenement extends Model
 {
     protected $fillable = [
-        'titre', 'accroche', 'slug', 'description', 'lieu', 'ville',
+        'titre', 'accroche', 'categorie', 'slug', 'description', 'lieu', 'ville',
         'debut_at', 'fin_at', 'image_path', 'lien_whatsapp', 'statut',
     ];
 
@@ -21,6 +21,14 @@ class Evenement extends Model
             'fin_at' => 'datetime',
         ];
     }
+
+    /** Catégories proposées dans le filtre du site (clé => libellé). */
+    public const CATEGORIES = [
+        'concert' => 'Concerts',
+        'festival' => 'Festivals',
+        'match' => 'Matchs',
+        'sortie' => 'Sorties',
+    ];
 
     public function getRouteKeyName(): string
     {

@@ -125,6 +125,10 @@
                     <span>Lecture du reçu… <strong x-text="lecturePct + '%'"></strong></span>
                 </div>
                 <div class="ocr-ok" x-show="etat === 'lu'"><x-ico name="check-circle" size="18" /> Reçu lu automatiquement. Vérifie les informations ci-dessous.</div>
+                <div class="ocr-bad" x-show="etat === 'ecart'" role="alert">
+                    <x-ico name="alert" size="18" /> <span x-text="message"></span>
+                    <button type="button" class="linklike" @click="reinitialiser()">Changer de capture</button>
+                </div>
                 <div class="ocr-warn" x-show="etat === 'partiel' || etat === 'echec'">
                     <x-ico name="info" size="18" /> <span x-text="message"></span>
                     <button type="button" class="linklike" @click="relancer()" x-show="etat === 'echec'">Relancer la lecture</button>
@@ -145,10 +149,10 @@
                     @error('transaction_id') <span class="err">{{ $message }}</span> @enderror
                 </label>
             </div>
-            <p class="hint" style="margin-top:0">Montant attendu : <strong>{{ number_format($r->montant, 0, ',', ' ') }} FCFA</strong>. Notre équipe compare toujours ces informations avec la capture.</p>
+            <p class="hint" style="margin-top:0">Montant exact à payer : <strong>{{ number_format($r->montant, 0, ',', ' ') }} FCFA</strong>. La preuve n’est acceptée que si le reçu indique ce montant.</p>
 
-            <button class="cta center" type="submit" style="margin-top:12px" wire:loading.attr="disabled" wire:target="submitProof,capture" x-bind:disabled="envoi || etat === 'lecture'">
-                <span wire:loading.remove wire:target="submitProof" x-text="etat === 'lecture' ? 'Lecture du reçu…' : 'Envoyer la preuve'">Envoyer la preuve</span>
+            <button class="cta center" type="submit" style="margin-top:12px" wire:loading.attr="disabled" wire:target="submitProof,capture" x-bind:disabled="envoi || etat === 'lecture' || etat === 'ecart' || (etat !== 'vide' && ! montantOk)">
+                <span wire:loading.remove wire:target="submitProof" x-text="etat === 'lecture' ? 'Lecture du reçu…' : (etat === 'ecart' ? 'Montant incorrect' : 'Envoyer la preuve')">Envoyer la preuve</span>
                 <span wire:loading wire:target="submitProof">Envoi en cours…</span>
             </button>
         </form>
@@ -168,6 +172,12 @@
     @elseif ($etape === 'billets')
         <div class="actions noprint">
             <a class="btn btn-ghost" href="{{ route('reservations.imprimer', $r) }}" target="_blank"><x-ico name="printer" size="18" /> Imprimer / PDF</a>
+            @if ($r->depart)
+                @php $arretRdv = $r->depart->tarifs()->where('zone_id', $r->zone_id)->first(); @endphp
+                <a class="btn btn-ghost" href="{{ route('reservations.agenda', $r) }}"><x-ico name="calendar-plus" size="18" /> Ajouter à mon agenda</a>
+                <a class="btn btn-ghost" target="_blank" rel="noopener"
+                   href="https://www.google.com/maps/search/?api=1&query={{ rawurlencode(trim(($arretRdv?->point_rdv ?: $r->zone?->nom).', Abidjan')) }}"><x-ico name="navigation" size="18" /> Itinéraire vers l’arrêt</a>
+            @endif
             @if ($evt?->lien_whatsapp)
                 <a class="btn btn-wa" href="{{ $evt->lien_whatsapp }}" target="_blank" rel="noopener"><x-ico name="chat" size="18" /> Rejoindre le groupe WhatsApp</a>
             @endif
@@ -240,6 +250,7 @@
         .ocr-run { background: var(--brand-soft); color: var(--brand); }
         .ocr-ok { background: var(--ok-soft); color: var(--ok); }
         .ocr-warn { background: var(--warn-soft); color: var(--warn); }
+        .ocr-bad { background: #fdecec; color: #b42318; font-weight: 600; }
         .spin { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; }
         .lu-grid { display: grid; gap: 0 14px; margin-top: 14px; }
         @media (min-width: 520px) { .lu-grid { grid-template-columns: 1fr 1.3fr; } }

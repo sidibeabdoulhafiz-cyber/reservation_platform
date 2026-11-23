@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Auth\CodeVerificationController;
+use App\Http\Controllers\CalendrierController;
 use App\Http\Controllers\CaptureController;
 use App\Http\Controllers\ImpressionController;
 use App\Http\Controllers\ProfileController;
@@ -35,7 +37,14 @@ Route::get('/robots.txt', fn () => response(implode("\n", [
     'Sitemap: '.route('sitemap'),
 ]), 200, ['Content-Type' => 'text/plain; charset=UTF-8']))->name('robots');
 
-Route::middleware(['auth'])->group(function () {
+// Code reçu par e-mail (inscription et connexion sur un nouvel appareil)
+Route::middleware('auth')->group(function () {
+    Route::get('/verification', [CodeVerificationController::class, 'show'])->name('code.show');
+    Route::post('/verification', [CodeVerificationController::class, 'store'])->middleware('throttle:20,1')->name('code.store');
+    Route::post('/verification/renvoyer', [CodeVerificationController::class, 'renvoyer'])->middleware('throttle:6,1')->name('code.renvoyer');
+});
+
+Route::middleware(['auth', 'code'])->group(function () {
     // Après connexion / inscription : on renvoie là où le passager en était.
     Route::get('/dashboard', function () {
         $user = auth()->user();
@@ -59,6 +68,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/mes-reservations', MyReservations::class)->name('reservations.index');
     Route::get('/reservations/{reservation}', Suivi::class)->name('reservations.show');
     Route::get('/reservations/{reservation}/imprimer', ImpressionController::class)->name('reservations.imprimer');
+    Route::get('/reservations/{reservation}/agenda.ics', CalendrierController::class)->name('reservations.agenda');
 
     Route::get('/controle', Scanner::class)->name('controle.scanner');
 

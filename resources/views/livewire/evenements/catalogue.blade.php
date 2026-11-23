@@ -32,12 +32,12 @@
             <div class="hero-text">
                 <p class="hero-kicker">Transport événementiel à Abidjan</p>
                 <h1>Zéro stress, zéro retard.<span class="h1-sub">Ton aller-retour en car pour tes événements et sorties.</span></h1>
-                <p>Réserve ton aller-retour en car vers ton concert, ton festival ou ton match. Ramassage près de chez toi, un billet QR par passager.</p>
+                <p class="hero-long">Réserve ton aller-retour en car vers ton concert, ton festival ou ton match. Ramassage près de chez toi, un billet QR par passager.</p>
 
                 <form class="search" role="search" wire:submit="$refresh" onsubmit="document.getElementById('evenements').scrollIntoView()">
                     <label for="q" class="sr">Rechercher un événement</label>
                     <x-ico name="search" size="22" class="search-ico" />
-                    <input id="q" type="search" wire:model.live.debounce.400ms="q" placeholder="Concert, festival, match, lieu…" autocomplete="off" enterkeyhint="search">
+                    <input id="q" type="search" wire:model.live.debounce.400ms="q" placeholder="Artiste, événement, lieu…" autocomplete="off" enterkeyhint="search">
                     <button type="submit" class="btn">Rechercher</button>
                 </form>
 
@@ -63,32 +63,54 @@
 
     {{-- 2 & 3. Découverte et événements disponibles --}}
     <section id="evenements" class="sec">
+        @php
+            $cats = $this->categories;
+            $filtre = $q !== '' || $quand !== 'tout' || $cat !== '';
+            $icoCat = ['concert' => 'music', 'festival' => 'sparkles', 'match' => 'ball', 'sortie' => 'sun'];
+        @endphp
         <div class="sec-head">
             <div>
                 <h2 class="sec-title">Événements disponibles</h2>
                 <p class="sec-lead" style="margin:0">Choisis ton événement, on s’occupe du trajet.</p>
             </div>
-            <div class="filters" role="group" aria-label="Filtrer par date">
-                @foreach (['tout' => 'Tous', 'semaine' => 'Cette semaine', 'mois' => 'Ce mois-ci'] as $val => $lib)
-                    <button type="button" class="pill-btn {{ $quand === $val ? 'on' : '' }}" wire:click="$set('quand', '{{ $val }}')" aria-pressed="{{ $quand === $val ? 'true' : 'false' }}">{{ $lib }}</button>
-                @endforeach
-            </div>
         </div>
 
-        @if ($q !== '' || $quand !== 'tout')
+        <div class="toolbar" role="group" aria-label="Filtrer les événements">
+            @if (count($cats))
+                <div class="chips" role="group" aria-label="Catégorie">
+                    <button type="button" class="chip {{ $cat === '' ? 'on' : '' }}" wire:click="$set('cat', '')" aria-pressed="{{ $cat === '' ? 'true' : 'false' }}">Tout</button>
+                    @foreach ($cats as $cle => $c)
+                        <button type="button" class="chip {{ $cat === $cle ? 'on' : '' }}" wire:click="$set('cat', '{{ $cle }}')" aria-pressed="{{ $cat === $cle ? 'true' : 'false' }}">
+                            <x-ico :name="$icoCat[$cle] ?? 'calendar'" size="17" /> {{ $c['lib'] }} <small>{{ $c['n'] }}</small>
+                        </button>
+                    @endforeach
+                </div>
+            @endif
+            <label class="quand">
+                <span class="sr">Période</span>
+                <x-ico name="calendar" size="17" />
+                <select wire:model.live="quand">
+                    <option value="tout">Toutes dates</option>
+                    <option value="semaine">Cette semaine</option>
+                    <option value="mois">Ce mois-ci</option>
+                </select>
+            </label>
+        </div>
+
+        @if ($filtre)
             <p class="result-line" aria-live="polite">
                 {{ $nb }} résultat{{ $nb > 1 ? 's' : '' }}@if ($q !== '') pour « {{ $q }} »@endif
                 · <button type="button" class="linklike" wire:click="effacer">Effacer les filtres</button>
             </p>
         @endif
 
-        <div wire:loading.class="loading" wire:target="q,quand,effacer">
+        <div wire:loading.class="loading" wire:target="q,quand,cat,effacer">
             @if ($this->evenements->isEmpty())
                 <div class="panel empty">
                     <x-ico name="calendar" size="34" />
-                    <h3>{{ $q !== '' || $quand !== 'tout' ? 'Aucun événement ne correspond' : 'Aucun événement pour le moment' }}</h3>
-                    <p class="hint">{{ $q !== '' || $quand !== 'tout' ? 'Essaie un autre mot-clé ou une autre période.' : 'Les prochains départs seront publiés ici très bientôt.' }}</p>
-                    @if ($q !== '' || $quand !== 'tout')
+                    <h3>{{ $filtre ? 'Aucun événement ne correspond' : 'Aucun événement pour le moment' }}</h3>
+                    <p class="hint">{{ $filtre ? 'Essaie un autre mot-clé, une autre catégorie ou une autre période.' : 'Les prochains départs seront publiés ici très bientôt.' }}</p>
+                    @if ($filtre)
                         <button type="button" class="btn btn-ghost" style="margin-top:12px" wire:click="effacer">Voir tous les événements</button>
                     @endif
                 </div>
@@ -217,6 +239,28 @@
     </div>
 
     <style>
+        /* Barre de filtres (catégories + période), collante au défilement */
+        .toolbar { position: sticky; top: 74px; z-index: 20; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: space-between; padding: 10px 0; margin: -6px 0 18px; background: var(--bg); }
+        .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px; margin: -2px; min-width: 0; flex: 1; }
+        .chips::-webkit-scrollbar { display: none; }
+        .chip { display: inline-flex; align-items: center; gap: 7px; flex: none; min-height: 42px; padding: 8px 15px; border-radius: 99px; border: 1.5px solid var(--line); background: #fff; color: var(--fg); font: 600 14.5px var(--body); cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+        .chip small { font-weight: 700; font-size: 12px; min-width: 20px; padding: 1px 6px; border-radius: 99px; background: var(--brand-soft); color: var(--brand); }
+        .chip:hover { border-color: var(--brand); }
+        .chip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+        .chip.on small { background: rgba(255,255,255,.2); color: #fff; }
+        .quand { position: relative; display: inline-flex; align-items: center; gap: 6px; flex: none; min-height: 42px; padding: 0 12px; border: 1.5px solid var(--line); border-radius: 99px; background: #fff; color: var(--brand); }
+        .quand select { border: 0; background: transparent; font: 600 14.5px var(--body); color: var(--fg); padding: 8px 4px; cursor: pointer; outline: none; }
+        .quand:focus-within { border-color: var(--brand); }
+        @media (max-width: 760px) {
+            .toolbar { top: 62px; margin-left: -16px; margin-right: -16px; padding: 10px 16px; flex-wrap: nowrap; box-shadow: 0 6px 12px -10px rgba(12,65,115,.35); }
+            .chip { min-height: 40px; padding: 7px 13px; font-size: 14px; }
+            .quand { padding: 0 8px; } .quand .ico { display: none; } .quand select { field-sizing: content; max-width: 104px; font-size: 14px; }
+            .hero-long { display: none; }
+            .hero-home .hero-text h1 { margin-bottom: 22px; }
+            .hero-home .in { padding-top: 32px !important; padding-bottom: 40px !important; }
+            .hero-illu { opacity: .14 !important; bottom: auto; top: 10px; }
+            .hero-points { gap: 6px 14px !important; }
+        }
         /* Comment ça marche : route animée */
         .trajet-how { position: relative; margin-top: 8px; padding-top: 44px; --dur: 2.6s; }
         .trajet-how .rt-road { top: 71px; }

@@ -39,7 +39,9 @@
     @if ($gsc)
         <meta name="google-site-verification" content="{{ $gsc }}">
     @endif
-    <link rel="apple-touch-icon" href="{{ asset('images/logo-icone.svg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
+    <meta name="apple-mobile-web-app-title" content="CotaTrans">
     @php
         $reseaux = collect(\App\Filament\Pages\Settings::RESEAUX)->keys()->map(fn ($k) => \App\Models\Setting::get($k))->filter()->values()->all();
         $ldBase = [
@@ -135,6 +137,19 @@
         .kicker { font: 600 13px var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--accent-dark); margin-bottom: 8px; }
 
         /* ---------- En-tête ---------- */
+        /* Bandeau d'annonce (Réglages > Site) */
+        .annonce { color: #fff; background: linear-gradient(90deg, #08305a, var(--brand)); font-size: 14.5px; }
+        .annonce-promo { background: linear-gradient(90deg, #e85f05, var(--accent)); }
+        .annonce-alerte { background: linear-gradient(90deg, #991b1b, #dc2626); }
+        .annonce-in { max-width: var(--maxw, 1160px); margin: 0 auto; padding: 9px 16px; display: flex; align-items: center; gap: 10px; }
+        .annonce-ico { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.18); }
+        .annonce p { margin: 0; flex: 1; font-weight: 600; line-height: 1.35; }
+        .annonce-lien { flex: none; display: inline-flex; align-items: center; gap: 4px; color: #fff; font-weight: 700; text-decoration: none; padding: 6px 12px; border-radius: 99px; background: rgba(255,255,255,.18); white-space: nowrap; }
+        .annonce-lien:hover { background: rgba(255,255,255,.3); }
+        .annonce-x { flex: none; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; color: #fff; cursor: pointer; display: grid; place-items: center; opacity: .8; }
+        .annonce-x:hover { opacity: 1; background: rgba(255,255,255,.15); }
+        @media (max-width: 600px) { .annonce-in { padding: 8px 10px 8px 12px; align-items: flex-start; flex-wrap: wrap; } .annonce p { font-size: 13.5px; flex-basis: calc(100% - 84px); } .annonce-lien { margin-left: 38px; padding: 4px 10px; font-size: 13px; } .annonce-x { position: absolute; right: 6px; } .annonce { position: relative; } }
+
         .site-top { background: var(--brand); color: #fff; position: sticky; top: 0; z-index: 40; border-bottom: 3px solid var(--accent); }
         .nav { display: flex; align-items: center; gap: 20px; padding: 0 20px; max-width: 1200px; margin: 0 auto; height: 72px; }
         .brand { display: inline-flex; align-items: center; flex: none; }
@@ -399,7 +414,7 @@
         /* Apparition au défilement des éléments [data-anim] (statiques). Sans JS : tout reste visible. */
         [data-anim] { transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); transition-delay: var(--d, 0s); }
         .js [data-anim]:not(.vu) { opacity: 0; transform: translateY(26px); }
-        /* (CSS pur, compatible avec les mises à jour Livewire ; visible d'office si non supporté) */
+        /* Apparition au défilement (visible d’office si non supporté) */
         @keyframes monte { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
         @supports (animation-timeline: view()) {
             .reveal { animation: monte linear both; animation-timeline: view(); animation-range: entry 0% entry 35%; }
@@ -429,6 +444,10 @@
         .cookie { position: fixed; left: 16px; right: 16px; bottom: calc(16px + var(--tabbar-h) + env(safe-area-inset-bottom)); z-index: 60; max-width: 560px; margin-left: auto; background: #fff; border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow-lg); padding: 16px 18px; font-size: 14.5px; }
         .cookie p { margin: 0 0 12px; color: var(--muted); }
         .cookie b { color: var(--fg); }
+        .oeil-wrap { position: relative; display: block; }
+        .oeil-wrap input { width: 100%; padding-right: 86px !important; }
+        .oeil { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: 0; background: var(--brand-soft); color: var(--brand); font: 600 13px var(--body); padding: 7px 10px; border-radius: 8px; cursor: pointer; }
+        .cookie-etat { margin: 6px 0 0 !important; font-size: 13.5px; color: var(--muted); }
         .cookie-actions { display: flex; gap: 8px; justify-content: flex-end; }
         .site-foot .copy { max-width: 1200px; margin: 0 auto; padding: 16px 20px 20px; border-top: 1px solid rgba(255,255,255,.1); font-size: 13.5px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 
@@ -438,7 +457,7 @@
             .js [data-anim]:not(.vu) { opacity: 1; transform: none; }
         }
         @media print {
-            .site-top, .site-foot, .tabbar, .noprint, .global-msg { display: none !important; }
+            .site-top, .site-foot, .tabbar, .noprint, .annonce { display: none !important; }
             body { background: #fff; padding: 0; }
             .wrap { padding: 0; }
         }
@@ -453,6 +472,27 @@
 
     <a href="#contenu" class="sr">Aller au contenu</a>
 
+    @php
+        $annonce = trim((string) \App\Models\Setting::get('message_global'));
+        $annonceStyle = in_array(\App\Models\Setting::get('message_global_style'), ['promo', 'alerte'], true) ? \App\Models\Setting::get('message_global_style') : 'info';
+        $annonceLien = \App\Models\Setting::get('message_global_lien');
+        $annonceCle = substr(md5($annonce), 0, 10);
+    @endphp
+    @if ($annonce !== '' && ! request()->routeIs('controle.*'))
+        <div class="annonce annonce-{{ $annonceStyle }} noprint" role="region" aria-label="Annonce"
+             x-data="{ ferme: (() => { try { return localStorage.getItem('ct_annonce') === '{{ $annonceCle }}'; } catch (e) { return false; } })() }"
+             x-show="! ferme" x-collapse.duration.250ms>
+            <div class="annonce-in">
+                <span class="annonce-ico" aria-hidden="true"><x-ico name="{{ $annonceStyle === 'alerte' ? 'alert' : ($annonceStyle === 'promo' ? 'ticket' : 'info') }}" size="18" /></span>
+                <p>{{ $annonce }}</p>
+                @if ($annonceLien)
+                    <a href="{{ $annonceLien }}" class="annonce-lien">En savoir plus <x-ico name="arrow-right" size="16" /></a>
+                @endif
+                <button type="button" class="annonce-x" aria-label="Fermer l’annonce" @click="ferme = true; try { localStorage.setItem('ct_annonce', '{{ $annonceCle }}'); } catch (e) {}"><x-ico name="x" size="18" /></button>
+            </div>
+        </div>
+        <script>try { if (localStorage.getItem('ct_annonce') === '{{ $annonceCle }}') document.currentScript.previousElementSibling.style.display = 'none'; } catch (e) {}</script>
+    @endif
     <header class="site-top">
         <nav class="nav" aria-label="Navigation principale">
             <a href="{{ route('home') }}" class="brand" aria-label="CotaTrans, accueil">
@@ -496,10 +536,6 @@
 
     <main id="contenu">
         <div class="wrap">
-            @if ($message = \App\Models\Setting::get('message_global'))
-                <div class="alert alert-warn global-msg"><x-ico name="info" />{{ $message }}</div>
-            @endif
-
             @if (session('status') && request()->routeIs('home'))
                 <div class="alert alert-ok" role="status" style="margin-top:16px"><x-ico name="check-circle" /> {{ session('status') }}</div>
             @endif
@@ -562,13 +598,14 @@
         $ga4 = \App\Models\Setting::get('ga4_id');
         $pixel = \App\Models\Setting::get('meta_pixel_id');
     @endphp
-    @if ($ga4 || $pixel)
-        {{-- Consentement cookies : la mesure d'audience n'est chargée qu'après accord. --}}
+    @php $mesure = (bool) ($ga4 || $pixel); @endphp
+    {{-- Consentement cookies : la mesure d'audience n'est chargée qu'après accord. Toujours présent pour « Gérer mes cookies ». --}}
         <div class="cookie" x-data="{
+                mesure: {{ $mesure ? 'true' : 'false' }},
                 choix: (() => { try { return localStorage.getItem('ct_cookies'); } catch (e) { return null; } })(),
                 ouvert: false,
-                init() { this.ouvert = this.choix === null; if (this.choix === 'oui') this.charger(); window.addEventListener('ct-cookies', () => this.ouvert = true); },
-                decider(v) { this.choix = v; this.ouvert = false; try { localStorage.setItem('ct_cookies', v); } catch (e) {} if (v === 'oui') this.charger(); },
+                init() { this.ouvert = this.mesure && this.choix === null; if (this.mesure && this.choix === 'oui') this.charger(); window.addEventListener('ct-cookies', () => this.ouvert = true); },
+                decider(v) { const avant = this.choix; this.choix = v; this.ouvert = false; try { localStorage.setItem('ct_cookies', v); } catch (e) {} if (v === 'oui') this.charger(); else if (avant === 'oui' && window.__ctMesure) location.reload(); },
                 charger() {
                     if (window.__ctMesure) return; window.__ctMesure = true;
                     @if ($ga4)
@@ -581,20 +618,30 @@
                         fbq('init', '{{ $pixel }}'); fbq('track', 'PageView');
                     @endif
                 }
-            }" x-show="ouvert" x-cloak x-transition.opacity role="dialog" aria-label="Cookies">
-            <p><b>Cookies</b> · On utilise des cookies de mesure d’audience pour améliorer CotaTrans et nos publicités. Les cookies indispensables (connexion, réservation) restent actifs dans tous les cas. <a href="{{ route('confidentialite') }}#cookies">En savoir plus</a></p>
-            <div class="cookie-actions">
-                <button type="button" class="btn btn-ghost btn-sm" @click="decider('non')">Refuser</button>
-                <button type="button" class="btn btn-sm" @click="decider('oui')">Accepter</button>
-            </div>
+            }" x-show="ouvert" x-cloak x-transition.opacity role="dialog" aria-label="Cookies" @keydown.escape.window="ouvert = false">
+            <template x-if="mesure">
+                <div>
+                    <p><b>Cookies</b> · On utilise des cookies de mesure d’audience pour améliorer CotaTrans et nos publicités. Les cookies indispensables (connexion, réservation) restent actifs dans tous les cas. <a href="{{ route('confidentialite') }}#cookies">En savoir plus</a></p>
+                    <p class="cookie-etat" x-show="choix" x-text="choix === 'oui' ? 'Ton choix actuel : mesure d’audience acceptée.' : 'Ton choix actuel : mesure d’audience refusée.'"></p>
+                    <div class="cookie-actions">
+                        <button type="button" class="btn btn-ghost btn-sm" @click="decider('non')">Refuser</button>
+                        <button type="button" class="btn btn-sm" @click="decider('oui')">Accepter</button>
+                    </div>
+                </div>
+            </template>
+            <template x-if="! mesure">
+                <div>
+                    <p><b>Cookies</b> · CotaTrans n’utilise actuellement que des cookies indispensables (connexion, sécurité, réservation en cours). Aucun cookie de mesure d’audience ou de publicité n’est déposé.</p>
+                    <div class="cookie-actions"><button type="button" class="btn btn-sm" @click="ouvert = false">J’ai compris</button></div>
+                </div>
+            </template>
         </div>
-    @endif
 
     @php
         $waNumero = preg_replace('/\D/', '', (string) \App\Models\Setting::get('whatsapp_numero'));
         $waTexte = \App\Models\Setting::get('whatsapp_message') ?: 'Bonjour CotaTrans, j’ai une question.';
     @endphp
-    @if (strlen($waNumero) >= 8 && ! request()->routeIs('controle.*'))
+    @if (strlen($waNumero) >= 8 && ! request()->routeIs('controle.*', 'code.*', 'login', 'register', 'password.*'))
         <a href="https://wa.me/{{ $waNumero }}?text={{ rawurlencode($waTexte.(request()->routeIs('evenements.show') ? ' ('.url()->current().')' : '')) }}"
            class="wa-float noprint" target="_blank" rel="noopener" aria-label="Nous écrire sur WhatsApp" title="Une question ? Écris-nous sur WhatsApp">
             <x-social name="whatsapp" size="30" />
@@ -616,6 +663,26 @@
 
     {{-- Lecture automatique des reçus (doit être chargé avant Alpine) --}}
     <script src="{{ asset('js/cotatrans-preuve.js') }}?v={{ @filemtime(public_path('js/cotatrans-preuve.js')) }}"></script>
+    <script>
+        // Bouton « afficher / masquer » sur tous les champs mot de passe.
+        (function () {
+            function oeil() {
+                document.querySelectorAll('input[type=password]:not([data-oeil]), input[data-oeil-type]:not([data-oeil])').forEach(function (i) {
+                    i.setAttribute('data-oeil', '1');
+                    var b = document.createElement('button');
+                    b.type = 'button'; b.className = 'oeil'; b.setAttribute('aria-label', 'Afficher le mot de passe'); b.textContent = 'Afficher';
+                    b.addEventListener('click', function () {
+                        var vis = i.type === 'password'; i.type = vis ? 'text' : 'password';
+                        b.textContent = vis ? 'Masquer' : 'Afficher'; b.setAttribute('aria-label', vis ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+                    });
+                    var w = document.createElement('span'); w.className = 'oeil-wrap';
+                    i.parentNode.insertBefore(w, i); w.appendChild(i); w.appendChild(b);
+                });
+            }
+            document.addEventListener('DOMContentLoaded', oeil);
+            document.addEventListener('livewire:init', function () { Livewire.hook('morphed', function () { setTimeout(oeil, 0); }); });
+        })();
+    </script>
     @livewireScripts
     <script>
         // Apparition douce au défilement : un léger décalage entre éléments voisins.

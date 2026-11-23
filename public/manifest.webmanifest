@@ -1,0 +1,19 @@
+{
+  "name": "CotaTrans · Transport événementiel",
+  "short_name": "CotaTrans",
+  "description": "Ton aller-retour en car pour tes concerts, festivals, matchs et sorties à Abidjan.",
+  "lang": "fr",
+  "start_url": "/?source=app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0C4173",
+  "theme_color": "#0C4173",
+  "icons": [
+    { "src": "/images/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/images/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/images/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Mes réservations", "url": "/mes-reservations", "icons": [{ "src": "/images/icone-192.png", "sizes": "192x192" }] }
+  ]
+}

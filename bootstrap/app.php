@@ -12,8 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(\App\Http\Middleware\EnTetesSecurite::class);
+
         $middleware->alias([
             'isAdmin' => \App\Http\Middleware\IsAdmin::class,
+            'code' => \App\Http\Middleware\ExigerCodeEmail::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

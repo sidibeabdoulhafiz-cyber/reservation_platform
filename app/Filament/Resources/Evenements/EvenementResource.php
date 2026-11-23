@@ -87,6 +87,9 @@ class EvenementResource extends Resource
                     TextInput::make('slug')->label('Adresse de la page')->prefix('/evenements/')
                         ->required()->unique(ignoreRecord: true)
                         ->helperText('Lien à partager par le promoteur.'),
+                    Select::make('categorie')->label('Catégorie')->options(Evenement::CATEGORIES)
+                        ->placeholder('Choisir…')
+                        ->helperText('Sert au filtre « Concerts, Festivals, Matchs, Sorties » sur le site.'),
                     TextInput::make('accroche')->label('Accroche')->maxLength(160)
                         ->placeholder('Ex. La plus grande soirée rétro de l’année')
                         ->columnSpanFull(),
@@ -125,6 +128,8 @@ class EvenementResource extends Resource
                 TextColumn::make('titre')->searchable()->sortable()
                     ->description(fn (Evenement $record) => $record->lieu),
                 TextColumn::make('debut_at')->label('Date')->dateTime('d/m/Y H:i')->sortable(),
+                TextColumn::make('categorie')->label('Catégorie')->badge()->color('gray')
+                    ->formatStateUsing(fn (?string $state) => Evenement::CATEGORIES[$state] ?? '—')->toggleable(),
                 TextColumn::make('departs_count')->label('Départs')->counts('departs'),
                 TextColumn::make('statut')->badge()
                     ->formatStateUsing(fn (string $state) => match ($state) {

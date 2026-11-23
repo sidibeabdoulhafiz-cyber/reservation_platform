@@ -17,6 +17,13 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Données de démonstration (comptes « password ») : jamais en production.
+        if (app()->isProduction()) {
+            $this->command?->warn('Production : données de démonstration ignorées. Crée ton admin avec « php artisan cotatrans:admin ».');
+
+            return;
+        }
+
         $password = Hash::make('password');
 
         User::updateOrCreate(

@@ -54,7 +54,7 @@ class ParcoursReservationTest extends TestCase
                 UploadedFile::fake()->image('recu.jpg'),
             );
         } catch (ValidationException $e) {
-            $this->assertStringContainsString('multiple', $e->errors()['montant_declare'][0]);
+            $this->assertStringContainsString('montant exact', $e->errors()['montant_declare'][0]);
             throw $e;
         }
     }

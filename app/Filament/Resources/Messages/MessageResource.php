@@ -2,10 +2,18 @@
 
 namespace App\Filament\Resources\Messages;
 
+use App\Actions\Messages\CreerEvenementBrouillon;
+use App\Actions\Messages\RepondreMessage;
+use App\Filament\Resources\Evenements\EvenementResource;
 use App\Filament\Resources\Messages\Pages\ManageMessages;
 use App\Models\Message;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -73,6 +81,13 @@ class MessageResource extends Resource
                     TextEntry::make('message')->placeholder('—')->columnSpanFull(),
                 ])
                 ->columnSpanFull(),
+            Section::make('Réponses envoyées')
+                ->visible(fn (?Message $record) => filled($record?->reponses))
+                ->schema([
+                    TextEntry::make('historique')->hiddenLabel()->html()
+                        ->state(fn (?Message $record) => collect($record?->reponses ?? [])->reverse()->map(fn ($r) => '<div style="padding:10px 0;border-bottom:1px solid rgba(0,0,0,.07)"><b>'.e($r['sujet']).'</b><br><small style="opacity:.7">'.e(\Illuminate\Support\Carbon::parse($r['le'])->format('d/m/Y H:i')).($r['par'] ? ' · '.e($r['par']) : '').'</small><div style="margin-top:6px;white-space:pre-line">'.e($r['texte']).'</div></div>')->implode('')),
+                ])
+                ->columnSpanFull(),
             Section::make('Suivi')
                 ->schema([
                     Select::make('statut')->options(self::STATUTS)->required(),
@@ -103,26 +118,79 @@ class MessageResource extends Resource
                         ? trim(($record->date_evenement?->format('d/m/Y') ?? '').' '.($record->lieu ?? ''))
                         : null)
                     ->wrap(),
+                TextColumn::make('repondu_at')->label('Réponse')->since()->placeholder('Pas encore')
+                    ->color(fn ($state) => $state ? 'success' : 'warning'),
                 TextColumn::make('created_at')->label('Reçu')->since()->sortable(),
             ])
+            ->recordUrl(null)
             ->filters([
                 SelectFilter::make('type')->options(['organisateur' => 'Organisateurs', 'contact' => 'Contact']),
                 SelectFilter::make('statut')->options(self::STATUTS),
             ])
             ->recordActions([
-                Action::make('repondre')->label('Répondre')->icon('heroicon-o-envelope')->color('gray')
-                    ->url(fn (Message $record) => 'mailto:'.$record->email.'?subject='.rawurlencode('Re : '.($record->evenement ?: $record->sujet ?: 'votre message à CotaTrans'))),
-                EditAction::make()->label('Ouvrir')
-                    ->mutateRecordDataUsing(function (array $data, Message $record) {
-                        if ($record->statut === 'nouveau') {
-                            $record->update(['statut' => 'en_cours']);
-                            $data['statut'] = 'en_cours';
-                        }
+                self::actionRepondre(),
+                self::actionBrouillon(),
+                ActionGroup::make([
+                    EditAction::make()->label('Ouvrir / statut')
+                        ->mutateRecordDataUsing(function (array $data, Message $record) {
+                            if ($record->statut === 'nouveau') {
+                                $record->update(['statut' => 'en_cours']);
+                                $data['statut'] = 'en_cours';
+                            }
 
-                        return $data;
-                    }),
-                DeleteAction::make(),
+                            return $data;
+                        }),
+                    DeleteAction::make(),
+                ])->tooltip('Plus d’actions'),
             ]);
+    }
+
+    public static function actionRepondre(): Action
+    {
+        return Action::make('repondre')->label('Répondre')->icon('heroicon-o-paper-airplane')->color('primary')
+            ->modalHeading(fn (Message $record) => 'Répondre à '.$record->nom)
+            ->modalDescription(fn (Message $record) => $record->email.' · la réponse part par e-mail et reste dans l’historique.')
+            ->modalSubmitActionLabel('Envoyer la réponse')
+            ->modalWidth('2xl')
+            ->fillForm(fn (Message $record) => [
+                'sujet' => 'Re : '.$record->objet(),
+                'texte' => RepondreMessage::modele($record),
+                'statut' => $record->statut === 'nouveau' ? 'en_cours' : $record->statut,
+            ])
+            ->schema([
+                TextInput::make('sujet')->label('Objet')->required()->maxLength(150),
+                Textarea::make('texte')->label('Message')->required()->rows(12)->maxLength(5000),
+                Select::make('statut')->label('Statut après envoi')->options(self::STATUTS)->required(),
+            ])
+            ->action(function (array $data, Message $record, RepondreMessage $repondre) {
+                try {
+                    $repondre->handle($record, $data['sujet'], $data['texte'], $data['statut'], Auth::user());
+                    Notification::make()->title('Réponse envoyée à '.$record->email)->success()->send();
+                } catch (\Throwable $e) {
+                    report($e);
+                    Notification::make()->title('L’e-mail n’a pas pu partir')->body('Vérifie les réglages e-mail puis réessaie.')->danger()->send();
+                }
+            });
+    }
+
+    public static function actionBrouillon(): Action
+    {
+        return Action::make('brouillon')
+            ->label(fn (Message $record) => $record->evenement_id ? 'Voir l’événement' : 'Créer l’événement')
+            ->icon(fn (Message $record) => $record->evenement_id ? 'heroicon-o-arrow-top-right-on-square' : 'heroicon-o-document-plus')
+            ->color('info')
+            ->requiresConfirmation(fn (Message $record) => ! $record->evenement_id)
+            ->modalHeading('Créer l’événement en brouillon ?')
+            ->modalDescription('Un brouillon est créé avec les infos de la demande (nom, date, lieu, description). Un admin le complète ensuite : affiche, départs, tarifs, puis publication.')
+            ->modalSubmitActionLabel('Créer le brouillon')
+            ->action(function (Message $record, CreerEvenementBrouillon $creer, Component $livewire) {
+                $existait = (bool) $record->evenement_id;
+                $evt = $creer->handle($record);
+                if (! $existait) {
+                    Notification::make()->title('Brouillon créé : '.$evt->titre)->body('Complète-le puis publie-le.')->success()->send();
+                }
+                $livewire->redirect(EvenementResource::getUrl('edit', ['record' => $evt]));
+            });
     }
 
     public static function getPages(): array

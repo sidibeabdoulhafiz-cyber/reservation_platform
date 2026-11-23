@@ -35,7 +35,6 @@ class Suivi extends Component
     {
         $this->authorize('view', $reservation);
         $this->reservationId = $reservation->id;
-        $this->montant_declare = (string) $reservation->montant;
     }
 
     #[Computed]

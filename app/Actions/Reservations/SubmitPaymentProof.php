@@ -2,11 +2,11 @@
 
 namespace App\Actions\Reservations;
 
+use App\Enums\ControlePaiement;
 use App\Enums\PaiementStatus;
 use App\Enums\ReservationStatus;
 use App\Models\Paiement;
 use App\Models\Reservation;
-use App\Support\AnalyseMontant;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
@@ -53,16 +53,11 @@ class SubmitPaymentProof
                 ]);
             }
 
-            $analyse = AnalyseMontant::analyser(
-                $montantDeclare,
-                (int) $locked->prix_unitaire,
-                (int) $locked->quantite,
-                $locked->maxParCommande(),
-            );
-
-            if (! $analyse['accepte']) {
+            // La preuve n'est acceptée que si le montant du reçu est exactement le prix de la réservation.
+            if ($montantDeclare !== (int) $locked->montant) {
                 throw ValidationException::withMessages([
-                    'montant_declare' => $analyse['message'],
+                    'montant_declare' => 'Le reçu indique '.self::fcfa($montantDeclare).' mais ta réservation coûte '
+                        .self::fcfa((int) $locked->montant).'. Paie le montant exact, puis envoie le nouveau reçu.',
                 ]);
             }
 
@@ -70,8 +65,8 @@ class SubmitPaymentProof
                 'transaction_id' => $transactionId,
                 'montant_declare' => $montantDeclare,
                 'montant_attendu' => $locked->montant,
-                'quantite_deduite' => $analyse['places'],
-                'controle' => $analyse['controle'],
+                'quantite_deduite' => (int) $locked->quantite,
+                'controle' => ControlePaiement::Conforme,
                 'capture_path' => $capture->store('captures', 'local'),
                 'capture_hash' => $hash,
                 'statut' => PaiementStatus::EnVerification,
@@ -84,5 +79,10 @@ class SubmitPaymentProof
 
             return $paiement;
         });
+    }
+
+    private static function fcfa(int $v): string
+    {
+        return number_format($v, 0, ',', ' ').' FCFA';
     }
 }

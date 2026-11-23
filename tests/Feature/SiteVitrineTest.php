@@ -88,9 +88,10 @@ class SiteVitrineTest extends TestCase
 
     public function test_bandeau_cookies_seulement_si_mesure_activee(): void
     {
-        $this->get('/')->assertDontSee('ct_cookies', false);
+        // Sans mesure d'audience : pas de bandeau automatique, mais « Gérer mes cookies » fonctionne.
+        $this->get('/')->assertSee('mesure: false', false)->assertDontSee('googletagmanager', false);
         Setting::set('ga4_id', 'G-TEST12345');
-        $this->get('/')->assertSee('ct_cookies', false)->assertSee('G-TEST12345', false)
+        $this->get('/')->assertSee('mesure: true', false)->assertSee('G-TEST12345', false)
             ->assertDontSee('<script async src="https://www.googletagmanager.com', false);
         $this->get('/confidentialite')->assertOk()->assertSee('Gérer mes cookies');
     }

@@ -1,0 +1,1 @@
+@include('errors.cotatrans', ['code' => '404', 'titre' => 'Page introuvable', 'texte' => 'Ce trajet n’existe pas ou plus. L’événement est peut-être terminé ou le lien est incomplet.', 'recharger' => ''])

@@ -9,13 +9,19 @@ use Filament\Widgets\ChartWidget;
 
 class RevenueChart extends ChartWidget
 {
-    protected ?string $heading = 'Revenus des 14 derniers jours (FCFA)';
+    protected ?string $heading = 'Ventes validées · 30 derniers jours';
+
+    protected ?string $description = 'Montant des paiements validés par jour, en FCFA.';
+
+    protected static ?int $sort = 4;
+
+    protected ?string $maxHeight = '260px';
 
     protected int|string|array $columnSpan = 'full';
 
     protected function getData(): array
     {
-        $from = now()->subDays(13)->startOfDay();
+        $from = now()->subDays(29)->startOfDay();
 
         $rows = Reservation::query()
             ->join('paiements', 'paiements.reservation_id', '=', 'reservations.id')
@@ -28,20 +34,33 @@ class RevenueChart extends ChartWidget
 
         $labels = [];
         $data = [];
-        for ($i = 0; $i < 14; $i++) {
+        for ($i = 0; $i < 30; $i++) {
             $day = $from->copy()->addDays($i);
             $labels[] = $day->format('d/m');
             $data[] = (int) ($rows[$day->toDateString()] ?? 0);
         }
 
         return [
-            'datasets' => [['label' => 'Revenus', 'data' => $data]],
+            'datasets' => [[
+                'label' => 'Ventes (FCFA)',
+                'data' => $data,
+                'borderColor' => '#FB7212',
+                'backgroundColor' => 'rgba(251, 114, 18, .12)',
+                'fill' => true,
+                'tension' => .35,
+                'pointRadius' => 2,
+            ]],
             'labels' => $labels,
         ];
     }
 
+    protected function getOptions(): array
+    {
+        return ['plugins' => ['legend' => ['display' => false]], 'scales' => ['y' => ['beginAtZero' => true]]];
+    }
+
     protected function getType(): string
     {
-        return 'bar';
+        return 'line';
     }
 }

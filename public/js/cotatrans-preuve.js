@@ -1,10 +1,8 @@
 /*
  * CotaTrans · lecture automatique du reçu Wave (montant + ID de transaction).
  *
- * - L'OCR (Tesseract.js) tourne dans le navigateur : aucune image n'est envoyée à un service tiers.
- * - La bibliothèque n'est chargée qu'au moment où le passager ajoute sa capture.
- * - Si la lecture échoue ou dépasse le délai, les champs restent modifiables (saisie manuelle).
- * - Le serveur revérifie toujours le montant (AnalyseMontant) et l'admin contrôle la capture.
+ * La lecture se fait dans le navigateur. La preuve n'est acceptée que si le montant
+ * est exactement celui de la réservation ; l'équipe contrôle toujours la capture.
  */
 (function () {
     const TESSERACT_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.min.js';
@@ -95,6 +93,10 @@
         return { montant, id };
     }
 
+    function fcfa(v) {
+        return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
+    }
+
     function composant(config) {
         return {
             attendu: Number(config.attendu) || 0,
@@ -145,7 +147,11 @@
                     if (montant) { this.$wire.set('montant_declare', montant, false); this.montantLu = true; }
                     if (id) { this.$wire.set('transaction_id', id, false); this.idLu = true; }
 
-                    if (this.montantLu && this.idLu) {
+                    if (this.montantLu && montant !== this.attendu) {
+                        this.etat = 'ecart';
+                        this.message = 'Le reçu indique ' + fcfa(montant) + ' mais ta réservation coûte ' + fcfa(this.attendu)
+                            + '. Paie le montant exact puis ajoute le nouveau reçu.';
+                    } else if (this.montantLu && this.idLu) {
                         this.etat = 'lu';
                     } else if (this.montantLu || this.idLu) {
                         this.etat = 'partiel';
@@ -163,6 +169,12 @@
                 } finally {
                     if (worker) { try { await worker.terminate(); } catch (_) {} }
                 }
+            },
+
+            /** Montant saisi à la main (lecture impossible) : il doit aussi être exact. */
+            get montantOk() {
+                const v = Number(this.$wire.montant_declare);
+                return v === this.attendu;
             },
 
             relancer() {

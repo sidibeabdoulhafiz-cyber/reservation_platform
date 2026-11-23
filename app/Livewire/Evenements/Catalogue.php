@@ -25,6 +25,17 @@ class Catalogue extends Component
     #[Url(as: 'quand', except: 'tout')]
     public string $quand = 'tout';
 
+    /** Catégorie : concert, festival, match, sortie. */
+    #[Url(as: 'cat', except: '')]
+    public string $cat = '';
+
+    public function updatedCat(): void
+    {
+        if (! array_key_exists($this->cat, Evenement::CATEGORIES)) {
+            $this->cat = '';
+        }
+    }
+
     public function updatedQuand(): void
     {
         if (! in_array($this->quand, ['tout', 'semaine', 'mois'], true)) {
@@ -34,7 +45,7 @@ class Catalogue extends Component
 
     public function effacer(): void
     {
-        $this->reset('q', 'quand');
+        $this->reset('q', 'quand', 'cat');
     }
 
     #[Computed]
@@ -49,6 +60,7 @@ class Catalogue extends Component
                 ->where('titre', 'like', '%'.$q.'%')
                 ->orWhere('lieu', 'like', '%'.$q.'%')
                 ->orWhere('ville', 'like', '%'.$q.'%')))
+            ->when(array_key_exists($this->cat, Evenement::CATEGORIES), fn ($w) => $w->where('categorie', $this->cat))
             ->when($this->quand === 'semaine', fn ($w) => $w->where('debut_at', '<=', now()->addDays(7)->endOfDay()))
             ->when($this->quand === 'mois', fn ($w) => $w->where('debut_at', '<=', now()->addDays(31)->endOfDay()))
             ->with([
@@ -57,6 +69,21 @@ class Catalogue extends Component
             ])
             ->orderBy('debut_at')
             ->get();
+    }
+
+    /** Nombre d'événements à venir par catégorie (pour n'afficher que les filtres utiles). */
+    #[Computed]
+    public function categories(): array
+    {
+        $compte = Evenement::publies()
+            ->where(fn ($w) => $w->whereNull('fin_at')->where('debut_at', '>=', now()->subHours(6))->orWhere('fin_at', '>=', now()))
+            ->whereNotNull('categorie')
+            ->selectRaw('categorie, COUNT(*) as n')->groupBy('categorie')->pluck('n', 'categorie');
+
+        return collect(Evenement::CATEGORIES)
+            ->map(fn ($lib, $cle) => ['lib' => $lib, 'n' => (int) ($compte[$cle] ?? 0)])
+            ->filter(fn ($c, $cle) => $c['n'] > 0 || $cle === $this->cat)
+            ->all();
     }
 
     /** Réservation en attente de paiement / vérification, pour proposer de la reprendre. */

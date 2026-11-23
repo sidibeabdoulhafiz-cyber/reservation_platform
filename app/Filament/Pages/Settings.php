@@ -8,6 +8,7 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
@@ -107,7 +108,7 @@ class Settings extends Page
         'reseau_linkedin' => 'LinkedIn',
     ];
 
-    public const TEXTES = ['email_reception', 'ga4_id', 'meta_pixel_id', 'google_site_verification', 'contact_tel', 'whatsapp_numero', 'whatsapp_message'];
+    public const TEXTES = ['email_reception', 'ga4_id', 'meta_pixel_id', 'google_site_verification', 'contact_tel', 'whatsapp_numero', 'whatsapp_message', 'message_global_style', 'message_global_lien'];
 
     public function form(Schema $schema): Schema
     {
@@ -124,8 +125,16 @@ class Settings extends Page
                 ])->columnSpanFull(),
 
                 Section::make('Site')->schema([
-                    TextInput::make('message_global')->label('Message affiché sur le site')
-                        ->helperText('Facultatif. Visible en haut de toutes les pages.')->maxLength(255),
+                    TextInput::make('message_global')->label('Bandeau d’annonce')
+                        ->helperText('Facultatif. Bandeau en haut de toutes les pages. Le visiteur peut le fermer ; il réapparaît si tu changes le texte.')->maxLength(180)
+                        ->placeholder('Ex. Réservations ouvertes pour le Festival des Grillades ! Places limitées.'),
+                    Select::make('message_global_style')->label('Style du bandeau')->options([
+                        'info' => 'Information (bleu)',
+                        'promo' => 'Bonne nouvelle / promo (orange)',
+                        'alerte' => 'Important (rouge)',
+                    ])->default('info'),
+                    TextInput::make('message_global_lien')->label('Lien du bandeau (facultatif)')->url()
+                        ->placeholder('https://cotatrans.ci/evenements/…')->helperText('Ajoute un bouton « En savoir plus ».'),
                     FileUpload::make('hero_image')->label('Photo de la bannière d’accueil')
                         ->helperText('Photo paysage (ex. car de participants devant un stade ou une salle). 1920×1080 conseillé, 5 Mo max. Un dégradé bleu est ajouté à gauche pour la lisibilité du texte.')
                         ->image()->disk('public')->directory('site')->visibility('public')

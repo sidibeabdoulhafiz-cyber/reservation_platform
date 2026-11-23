@@ -143,6 +143,10 @@ class ParcoursPassagerTest extends TestCase
         Livewire::actingAs($client)->test(Suivi::class, ['reservation' => $r])
             ->set('capture', UploadedFile::fake()->image('recu.jpg'))
             ->set('transaction_id', 't_abc 12345')
+            ->set('montant_declare', (int) $r->montant + 500)
+            ->call('submitProof')
+            ->assertHasErrors(['montant_declare'])
+            ->set('montant_declare', (int) $r->montant)
             ->call('submitProof')
             ->assertHasNoErrors()
             ->assertSee('Reçu bien reçu');
