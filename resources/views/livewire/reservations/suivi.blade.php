@@ -96,9 +96,18 @@
                     <li>Faites une capture d’écran du reçu Wave.</li>
                     <li>Revenez sur cette page et envoyez la capture à l’étape 2.</li>
                 </ol>
-                <div class="wave-qr">
-                    <div class="wave-qr-img" aria-hidden="true">{!! \App\Support\QrCode::svg($lien, 132) !!}</div>
-                    <p><b>Vous êtes sur ordinateur ?</b><br>Scannez ce code avec l’appareil photo de votre téléphone : Wave s’ouvre directement avec le bon montant.</p>
+                @php $telClient = preg_replace('/\D/', '', (string) $r->user->tel); if (strlen($telClient) === 10) { $telClient = '225'.$telClient; } @endphp
+                <div class="wave-qr" x-data="{ copie: false }">
+                    <div class="wave-qr-img" aria-hidden="true">{!! \App\Support\QrCode::svgEcran($lien, 200) !!}</div>
+                    <div class="wave-qr-txt">
+                        <p><b>Vous êtes sur ordinateur ?</b> Ouvrez l’<b>appareil photo</b> de votre téléphone (pas le scanner de l’application Wave) et visez ce code, puis touchez le lien qui apparaît : Wave s’ouvre avec le bon montant.</p>
+                        <div class="wave-alt">
+                            @if (strlen($telClient) >= 11)
+                                <a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="https://wa.me/{{ $telClient }}?text={{ rawurlencode('Mon lien de paiement CotaTrans ('.number_format($r->montant, 0, ',', ' ').' FCFA) : '.$lien) }}"><x-social name="whatsapp" size="16" /> M’envoyer le lien sur WhatsApp</a>
+                            @endif
+                            <button type="button" class="btn btn-ghost btn-sm" @click="navigator.clipboard?.writeText(@js($lien)); copie = true; setTimeout(() => copie = false, 2000)"><x-ico name="link" size="16" /> <span x-text="copie ? 'Lien copié !' : 'Copier le lien'">Copier le lien</span></button>
+                        </div>
+                    </div>
                 </div>
             @else
                 <div class="alert alert-warn">Le lien de paiement n’est pas encore configuré. Contactez CotaTrans.</div>
@@ -246,7 +255,10 @@
         .wave-steps { margin: 14px 0 0; padding-left: 22px; display: grid; gap: 6px; color: var(--muted); font-size: 14.5px; }
         .wave-steps b { color: var(--fg); }
         .wave-qr { display: none; align-items: center; gap: 16px; margin-top: 16px; padding: 14px; border: 1px dashed var(--line); border-radius: 14px; }
-        .wave-qr-img { flex: none; width: 132px; height: 132px; background: #fff; padding: 4px; border-radius: 8px; }
+        .wave-qr-img { flex: none; width: 168px; height: 168px; background: #fff; border-radius: 10px; border: 1px solid var(--line); }
+        .wave-qr-img svg rect:first-of-type { fill: #fff; }
+        .wave-qr-txt { display: grid; gap: 10px; }
+        .wave-alt { display: flex; flex-wrap: wrap; gap: 8px; }
         .wave-qr-img svg { width: 100%; height: 100%; display: block; }
         .wave-qr p { margin: 0; font-size: 14.5px; color: var(--muted); }
         .wave-qr p b { color: var(--fg); }
