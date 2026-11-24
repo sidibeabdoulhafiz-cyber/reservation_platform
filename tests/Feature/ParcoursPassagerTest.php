@@ -138,7 +138,7 @@ class ParcoursPassagerTest extends TestCase
         $r = app(CreateReservation::class)->handle($client, ['type' => 'transport', 'depart_id' => $depart->id, 'zone_id' => $yop->id, 'quantite' => 1]);
 
         $this->actingAs($autre)->get(route('reservations.show', $r))->assertForbidden();
-        $this->actingAs($client)->get(route('reservations.show', $r))->assertOk()->assertSee('Ouvrir Wave et payer');
+        $this->actingAs($client)->get(route('reservations.show', $r))->assertOk()->assertSee('Payer avec Wave');
 
         Livewire::actingAs($client)->test(Suivi::class, ['reservation' => $r])
             ->set('capture', UploadedFile::fake()->image('recu.jpg'))

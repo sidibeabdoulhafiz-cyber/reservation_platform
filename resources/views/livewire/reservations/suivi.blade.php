@@ -86,11 +86,20 @@
         <section class="panel paystep">
             <div class="ps-head"><span class="num">1</span><h3>Payez {{ number_format($r->montant, 0, ',', ' ') }} FCFA sur Wave</h3></div>
             @if ($lien = $this->lienWave())
+                @php $montantPrerempli = \App\Support\Wave::montantActif(); @endphp
                 <a class="cta wave" href="{{ $lien }}" target="_blank" rel="noopener">
-                    <span>Ouvrir Wave et payer</span>
+                    <span class="wave-l"><x-ico name="wallet" size="22" /> Payer avec Wave</span>
                     <span class="amt">{{ number_format($r->montant, 0, ',', ' ') }} F</span>
                 </a>
-                <p class="hint">Une fois le paiement fait, faites une capture d’écran du reçu et revenez ici.</p>
+                <ol class="wave-steps">
+                    <li>Wave s’ouvre {{ $montantPrerempli ? 'avec le montant déjà rempli' : '' }} : vérifiez <b>{{ number_format($r->montant, 0, ',', ' ') }} FCFA</b>{{ $montantPrerempli ? '' : ' et saisissez-le' }}, puis confirmez.</li>
+                    <li>Faites une capture d’écran du reçu Wave.</li>
+                    <li>Revenez sur cette page et envoyez la capture à l’étape 2.</li>
+                </ol>
+                <div class="wave-qr">
+                    <div class="wave-qr-img" aria-hidden="true">{!! \App\Support\QrCode::svg($lien, 132) !!}</div>
+                    <p><b>Vous êtes sur ordinateur ?</b><br>Scannez ce code avec l’appareil photo de votre téléphone : Wave s’ouvre directement avec le bon montant.</p>
+                </div>
             @else
                 <div class="alert alert-warn">Le lien de paiement n’est pas encore configuré. Contactez CotaTrans.</div>
             @endif
@@ -232,7 +241,16 @@
         .ps-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
         .ps-head h3 { margin: 0; }
         .ps-head .num { width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font: 600 14px var(--body); flex: none; }
-        .cta.wave { background: #1dc8ff; color: #04263a; }
+        .cta.wave { background: #1dc8ff; color: #04263a; min-height: 58px; font-size: 17px; }
+        .wave-l { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; }
+        .wave-steps { margin: 14px 0 0; padding-left: 22px; display: grid; gap: 6px; color: var(--muted); font-size: 14.5px; }
+        .wave-steps b { color: var(--fg); }
+        .wave-qr { display: none; align-items: center; gap: 16px; margin-top: 16px; padding: 14px; border: 1px dashed var(--line); border-radius: 14px; }
+        .wave-qr-img { flex: none; width: 132px; height: 132px; background: #fff; padding: 4px; border-radius: 8px; }
+        .wave-qr-img svg { width: 100%; height: 100%; display: block; }
+        .wave-qr p { margin: 0; font-size: 14.5px; color: var(--muted); }
+        .wave-qr p b { color: var(--fg); }
+        @media (min-width: 900px) and (hover: hover) { .wave-qr { display: flex; } }
         .cta.wave:hover { background: #0bb4ea; }
         .drop { position: relative; display: block; border: 2px dashed var(--line); border-radius: 16px; background: var(--soft); cursor: pointer; transition: border-color .15s; }
         .drop:hover, .drop:focus-within { border-color: var(--accent); }

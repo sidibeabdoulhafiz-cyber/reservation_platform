@@ -24,4 +24,12 @@ class WaveTest extends TestCase
         $this->assertFalse(Wave::lienAccepte(''));
         $this->assertFalse(Wave::lienAccepte('javascript:alert(1)'));
     }
+
+    public function test_lien_wave_personnalise_avec_le_montant_exact(): void
+    {
+        $this->assertSame('https://pay.wave.com/m/M_ci_0S9vrDPL2ExV/c/ci/', Wave::nettoyer('https://pay.wave.com/m/M_ci_0S9vrDPL2ExV/c/ci/?amount=100'));
+        $this->assertSame('https://pay.wave.com/m/M_ci_0S9vrDPL2ExV/c/ci/?amount=7500', Wave::avecMontant('https://pay.wave.com/m/M_ci_0S9vrDPL2ExV/c/ci/?amount=100', 7500));
+        $this->assertSame('https://pay.wave.com/m/X/?ref=a&amount=500', Wave::avecMontant('https://pay.wave.com/m/X/?ref=a&amount=100', 500));
+        $this->assertTrue(Wave::estLienWave('https://pay.wave.com/m/X/'));
+    }
 }

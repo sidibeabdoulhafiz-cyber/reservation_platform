@@ -87,8 +87,8 @@ class Settings extends Page
     public function mount(): void
     {
         $this->form->fill([
-            'wave_link' => Setting::get('wave_link', ''),
-            'wave_amount' => (string) Setting::get('wave_amount', '0') === '1',
+            'wave_link' => Setting::get('wave_link', '') ?: config('cotatrans.wave_link', ''),
+            'wave_amount' => Wave::montantActif(),
             'delai_paiement_min' => (int) Setting::get('delai_paiement_min', 30),
             'message_global' => Setting::get('message_global', ''),
             'site_ouvert' => (string) Setting::get('site_ouvert', '1') === '1',
@@ -125,10 +125,11 @@ class Settings extends Page
         return $schema
             ->components([
                 Section::make('Paiement et réservations')->columns(2)->schema([
-                    TextInput::make('wave_link')->label('Lien de paiement Wave')->required()->columnSpanFull()
-                        ->helperText('En production : https:// uniquement. En local, un lien http:// (simulation /dev/payer) est accepté, sans HTTPS.'),
-                    Toggle::make('wave_amount')->label('Ajouter le montant au lien Wave')
-                        ->helperText('À activer seulement si le compte Wave Business l’accepte.'),
+                    TextInput::make('wave_link')->label('Lien de paiement Wave Business')->required()->columnSpanFull()
+                        ->placeholder('https://pay.wave.com/m/M_ci_…/c/ci/')
+                        ->helperText('Collez votre lien marchand Wave. Si vous le copiez avec « ?amount=… », ce montant est retiré : chaque client voit automatiquement le prix exact de sa réservation.'),
+                    Toggle::make('wave_amount')->label('Pré-remplir le montant dans Wave')
+                        ->helperText('Recommandé : le client ouvre Wave avec le bon montant déjà saisi.'),
                     Toggle::make('site_ouvert')->label('Réservations ouvertes'),
                     TextInput::make('delai_paiement_min')->label('Délai de paiement (minutes)')
                         ->numeric()->minValue(5)->maxValue(180)->required(),
@@ -200,7 +201,7 @@ class Settings extends Page
     {
         $data = $this->form->getState();
 
-        $lien = $data['wave_link'];
+        $lien = Wave::nettoyer((string) $data['wave_link']);
         if (! Wave::lienAccepte($lien)) {
             Notification::make()
                 ->title(app()->environment('production')
