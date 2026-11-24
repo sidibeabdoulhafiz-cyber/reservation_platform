@@ -19,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
     {
         if ($this->app->environment('production')) {
             URL::forceHttps();
+            // Hébergement mutualisé : les liens restent https://domaine/… même si le site est servi via public/.
+            URL::forceRootUrl((string) config('app.url'));
         }
 
         // Mot de passe : 8 caractères minimum, avec au moins une lettre et un chiffre.

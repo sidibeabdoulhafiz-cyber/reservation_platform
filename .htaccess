@@ -1,0 +1,15 @@
+# CotaTrans sur hébergement mutualisé (LWS, cPanel…) quand la racine du site
+# ne peut pas pointer sur public/ : tout le trafic est envoyé vers public/.
+# Les dossiers du projet (.env, app, vendor, storage…) ne sont jamais servis.
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # HTTPS obligatoire : décommentez les 2 lignes suivantes une fois le certificat SSL actif.
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
+
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
