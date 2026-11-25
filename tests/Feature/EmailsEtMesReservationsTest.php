@@ -95,4 +95,33 @@ class EmailsEtMesReservationsTest extends TestCase
             ->call('choisirArret', 999999)
             ->assertSet('zone_id', $z2->id);
     }
+
+    public function test_nom_obligatoire_pour_chaque_invite(): void
+    {
+        Setting::set('site_ouvert', '1');
+        $client = User::factory()->create(['role' => 'client', 'actif' => true, 'name' => 'Awa Koné']);
+        $z = \App\Models\Zone::create(['nom' => 'Yopougon', 'prix_defaut' => 2500, 'actif' => true]);
+        $v = \App\Models\Vehicule::create(['nom' => 'Car', 'immatriculation' => 'P-1', 'capacite' => 30, 'actif' => true]);
+        $evt = \App\Models\Evenement::create(['titre' => 'Match', 'slug' => 'match-p', 'lieu' => 'Stade', 'ville' => 'Abidjan', 'debut_at' => now()->addDays(6), 'statut' => 'publie']);
+        $d = \App\Models\Depart::create(['evenement_id' => $evt->id, 'vehicule_id' => $v->id, 'depart_at' => now()->addDays(6), 'places_total' => 30, 'places_reservees' => 0, 'max_par_commande' => 8, 'statut' => 'ouvert']);
+        $d->tarifs()->create(['zone_id' => $z->id, 'ordre' => 1, 'principal' => true, 'prix' => 2500, 'actif' => true]);
+
+        $this->actingAs($client);
+        Livewire::test(\App\Livewire\Reservations\Create::class, ['evenement' => $evt])
+            ->assertSet('prixU', 2500)
+            ->set('quantite', 3)
+            ->set('passagers', ['', 'Moussa Traoré', '  '])
+            ->call('reserve')
+            ->assertHasErrors(['passagers.2'])
+            ->set('passagers', ['', 'Moussa Traoré', '12'])
+            ->call('reserve')
+            ->assertHasErrors(['passagers.2'])
+            ->set('passagers', ['', 'Moussa Traoré', 'Koffi Yao'])
+            ->call('reserve')
+            ->assertHasNoErrors();
+
+        $r = \App\Models\Reservation::latest('id')->first();
+        $this->assertSame(['Awa Koné', 'Moussa Traoré', 'Koffi Yao'], $r->passagers);
+        $this->assertSame(7500, (int) $r->montant);
+    }
 }

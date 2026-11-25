@@ -38,6 +38,11 @@ class Create extends Component
     /** Noms des passagers (un par place). Le passager 1 est le payeur par défaut. */
     public array $passagers = [''];
 
+    /** Repris côté navigateur pour ajouter/retirer des passagers instantanément (sans aller-retour serveur). */
+    public int $prixU = 0;
+
+    public int $maxQte = 1;
+
     /** Identification du passager non connecté : « inscription » ou « connexion ». */
     public string $mode = 'inscription';
 
@@ -236,13 +241,24 @@ class Create extends Component
 
     public function reserve(CreateReservation $create)
     {
+        $this->quantite = max(1, min((int) $this->quantite, max(1, $this->maxPossible)));
         $this->ajusterPassagers();
-        $this->validate([
-            'passagers' => ['array'],
-            'passagers.*' => ['nullable', 'string', 'max:120'],
-        ], [
-            'passagers.*.max' => 'Le nom d’un passager ne doit pas dépasser 120 caractères.',
-        ]);
+        // Le nom est la seule preuve qu'un invité voyage : obligatoire pour chaque passager en plus du payeur.
+        $regles = ['passagers' => ['array'], 'passagers.0' => ['nullable', 'string', 'max:120']];
+        $messages = [];
+        foreach (array_keys($this->passagers) as $i) {
+            if ($i === 0) {
+                continue;
+            }
+            $regles["passagers.$i"] = ['required', 'string', 'max:120', function (string $attr, mixed $valeur, \Closure $fail) use ($i) {
+                if (mb_strlen(preg_replace('/[^\pL]/u', '', (string) $valeur)) < 2) {
+                    $fail('Indiquez le nom et le prénom du passager '.($i + 1).'.');
+                }
+            }];
+            $messages["passagers.$i.required"] = 'Indiquez le nom et le prénom du passager '.($i + 1).'.';
+            $messages["passagers.$i.max"] = 'Le nom d’un passager ne doit pas dépasser 120 caractères.';
+        }
+        $this->validate($regles, $messages);
 
         $choix = [
             'type' => $this->canal,
@@ -428,5 +444,7 @@ class Create extends Component
         unset($this->prixUnitaire, $this->maxParCommande, $this->restant, $this->maxPossible);
         $this->quantite = max(1, min($this->quantite, max(1, $this->maxPossible)));
         $this->ajusterPassagers();
+        $this->prixU = $this->prixUnitaire;
+        $this->maxQte = max(1, $this->maxPossible);
     }
 }

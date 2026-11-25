@@ -77,6 +77,7 @@ class ParcoursPassagerTest extends TestCase
             ->assertSet('depart_id', $depart->id)
             ->assertSet('zone_id', $yop->id) // point principal présélectionné
             ->call('increment')
+            ->set('passagers.1', 'Moussa Traoré')
             ->set('nom', 'Awa Koné')
             ->set('tel', '07 00 00 00 99')
             ->set('email', 'Awa@Exemple.com')

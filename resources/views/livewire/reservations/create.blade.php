@@ -61,7 +61,27 @@
             <a href="{{ route('home') }}#evenements" class="btn btn-ghost" style="margin-top:12px">Voir d’autres événements</a>
         </div>
     @else
-        <form class="booking" wire:submit="reserve">
+        {{-- Passagers gérés dans le navigateur : ajout/retrait instantanés, noms invités obligatoires. --}}
+        <form class="booking" wire:submit="reserve" novalidate
+              x-data="{
+                  qte: $wire.entangle('quantite'),
+                  noms: $wire.entangle('passagers'),
+                  tente: false,
+                  fcfa(v) { return String(Math.max(0, v || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); },
+                  ajuster() { const n = this.noms.slice(0, this.qte); while (n.length < this.qte) n.push(''); this.noms = n; },
+                  ajouter() { if (this.qte >= $wire.maxQte) return; this.qte++; this.ajuster(); this.$nextTick(() => { const l = this.$root.querySelectorAll('.pax-list input'); l[l.length - 1]?.focus(); }); },
+                  moins() { if (this.qte > 1) { this.qte--; this.ajuster(); } },
+                  retirer(i) { if (i < 1 || this.qte <= 1) return; this.noms = this.noms.filter((_, k) => k !== i); this.qte--; },
+                  manque(i) { return i > 0 && (this.noms[i] || '').replace(/[^\p{L}]/gu, '').length < 2; },
+                  verifierNoms(e) {
+                      this.ajuster();
+                      const i = this.noms.findIndex((_, k) => this.manque(k));
+                      if (i === -1) return true;
+                      this.tente = true; e.preventDefault(); e.stopImmediatePropagation();
+                      this.$nextTick(() => { const champ = this.$root.querySelectorAll('.pax-list input')[i]; champ?.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => champ?.focus({ preventScroll: true }), 350); });
+                      return false;
+                  },
+              }">
             <div class="panel steps-panel">
                 @if ($this->departs->isNotEmpty() && $this->typesBillets->isNotEmpty())
                     <div class="seg seg-full" role="tablist" aria-label="Type de réservation">
@@ -138,39 +158,39 @@
                     <legend><span class="num">{{ $n++ }}</span> Qui voyage ?</legend>
                     <div class="qty-row">
                         <div class="stepper">
-                            <button type="button" wire:click="decrement" aria-label="Retirer un passager" @disabled($quantite <= 1)><x-ico name="minus" /></button>
-                            <output aria-live="polite">{{ $quantite }}</output>
-                            <button type="button" wire:click="increment" aria-label="Ajouter un passager" @disabled($quantite >= $max)><x-ico name="plus" /></button>
+                            <button type="button" x-on:click="moins()" :disabled="qte <= 1" aria-label="Retirer un passager" @disabled($quantite <= 1)><x-ico name="minus" /></button>
+                            <output aria-live="polite" x-text="qte">{{ $quantite }}</output>
+                            <button type="button" x-on:click="ajouter()" :disabled="qte >= $wire.maxQte" aria-label="Ajouter un passager" @disabled($quantite >= $max)><x-ico name="plus" /></button>
                         </div>
                         <span class="hint" style="margin:0">
                             @if ($complet)
                                 <strong style="color:var(--err)">Complet</strong>
                             @else
-                                {{ $quantite }} passager{{ $quantite > 1 ? 's' : '' }} · max {{ $this->maxParCommande }} par réservation · {{ $this->restant }} place{{ $this->restant > 1 ? 's' : '' }} libre{{ $this->restant > 1 ? 's' : '' }}
+                                <span x-text="qte + ' passager' + (qte > 1 ? 's' : '')">{{ $quantite }} passager{{ $quantite > 1 ? 's' : '' }}</span> · max {{ $this->maxParCommande }} par réservation · {{ $this->restant }} place{{ $this->restant > 1 ? 's' : '' }} libre{{ $this->restant > 1 ? 's' : '' }}
                             @endif
                         </span>
                     </div>
 
-                    <ol class="pax-list">
-                        @foreach ($passagers as $i => $nomPax)
-                            <li wire:key="pax-{{ $i }}">
+                    <ol class="pax-list" wire:ignore>
+                        <template x-for="(nom, i) in noms" :key="i">
+                            <li :class="{ 'pax-manque': tente && manque(i) }">
                                 <label class="field">
-                                    <span>{{ $i === 0 ? 'Passager 1 · vous' : 'Passager '.($i + 1).' · invité' }}</span>
+                                    <span x-text="i === 0 ? 'Passager 1 · vous' : 'Passager ' + (i + 1) + ' · invité (nom obligatoire)'"></span>
                                     <span class="pax-input">
-                                        <input type="text" wire:model.blur="passagers.{{ $i }}" maxlength="120" autocomplete="{{ $i === 0 ? 'name' : 'off' }}"
-                                               placeholder="{{ $i === 0 ? ($this->nomPayeur() ?: 'Votre nom complet') : 'Nom et prénom' }}">
-                                        @if ($i > 0)
-                                            <button type="button" class="pax-del" wire:click="retirerPassager({{ $i }})" aria-label="Retirer le passager {{ $i + 1 }}"><x-ico name="x" size="18" /></button>
-                                        @endif
+                                        <input type="text" x-model="noms[i]" maxlength="120" :autocomplete="i === 0 ? 'name' : 'off'" autocapitalize="words" enterkeyhint="next"
+                                               :required="i > 0" :aria-invalid="tente && manque(i) ? 'true' : 'false'"
+                                               :placeholder="i === 0 ? @js($this->nomPayeur() ?: 'Votre nom complet') : 'Nom et prénom'">
+                                        <button type="button" class="pax-del" x-show="i > 0" x-on:click="retirer(i)" :aria-label="'Retirer le passager ' + (i + 1)"><x-ico name="x" size="18" /></button>
                                     </span>
                                 </label>
-                                @error('passagers.'.$i) <span class="err">{{ $message }}</span> @enderror
+                                <span class="err" x-show="tente && manque(i)" x-text="'Indiquez le nom et le prénom du passager ' + (i + 1) + '.'"></span>
                             </li>
-                        @endforeach
+                        </template>
                     </ol>
-                    @if ($quantite < $max)
-                        <button type="button" class="add-pax" wire:click="increment"><x-ico name="plus" size="18" /> Ajouter un passager</button>
-                    @endif
+                    @foreach ($errors->get('passagers.*') as $msgs)
+                        <span class="err">{{ $msgs[0] }}</span>
+                    @endforeach
+                    <button type="button" class="add-pax" x-show="qte < $wire.maxQte" x-on:click="ajouter()" @if ($quantite >= $max) style="display:none" @endif><x-ico name="plus" size="18" /> Ajouter un passager</button>
                     <p class="hint"><x-ico name="info" size="15" style="vertical-align:-2px" /> Vos invités n’ont pas besoin de compte. Chacun reçoit son propre billet QR{{ $transport ? ', valable pour l’aller et le retour' : '' }}.</p>
                 </fieldset>
 
@@ -254,8 +274,8 @@
                     @endif
 
                     <div class="recap-lines">
-                        <div><span>{{ $quantite }} × {{ number_format($prix, 0, ',', ' ') }} F</span><span>{{ number_format($prix * $quantite, 0, ',', ' ') }} F</span></div>
-                        <div class="recap-total"><span>Total</span><span>{{ number_format($prix * $quantite, 0, ',', ' ') }} FCFA</span></div>
+                        <div><span x-text="qte + ' × ' + fcfa($wire.prixU) + ' F'">{{ $quantite }} × {{ number_format($prix, 0, ',', ' ') }} F</span><span x-text="fcfa($wire.prixU * qte) + ' F'">{{ number_format($prix * $quantite, 0, ',', ' ') }} F</span></div>
+                        <div class="recap-total"><span>Total</span><span x-text="fcfa($wire.prixU * qte) + ' FCFA'">{{ number_format($prix * $quantite, 0, ',', ' ') }} FCFA</span></div>
                     </div>
 
                     <ul class="reassure">
@@ -269,14 +289,16 @@
                     <button class="cta" type="submit" @disabled(! $this->open || $prix < 1 || $complet) wire:loading.attr="disabled" wire:target="reserve"
                         @guest
                             x-on:click="
+                                if (! verifierNoms($event)) return;
                                 const bloc = document.getElementById('inscription');
                                 const champs = bloc ? [...bloc.querySelectorAll('input')].filter(i => i.offsetParent !== null) : [];
                                 if (champs.some(i => ! i.value.trim())) { $event.preventDefault(); window.dispatchEvent(new CustomEvent('attirer-inscription')); }
                             "
-                        @endguest>
+                        @endguest
+                        @auth x-on:click="verifierNoms($event)" @endauth>
                         <span wire:loading.remove wire:target="reserve">{{ $complet ? 'Complet' : (auth()->check() ? 'Réserver et payer' : 'Créer mon compte et réserver') }}</span>
                         <span wire:loading wire:target="reserve">Un instant…</span>
-                        <span class="amt">{{ number_format($prix * $quantite, 0, ',', ' ') }} F</span>
+                        <span class="amt" x-text="fcfa($wire.prixU * qte) + ' F'">{{ number_format($prix * $quantite, 0, ',', ' ') }} F</span>
                     </button>
                 </div>
             </aside>
@@ -305,6 +327,8 @@
         .qty-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
         .pax-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
         .pax-list .field { margin-bottom: 10px; }
+        .pax-list .err { display: block; margin: -4px 0 10px; }
+        .pax-manque input { border-color: var(--err) !important; background: #fff5f5 !important; }
         .pax-list .field > span:first-child { color: var(--muted); font-size: 13.5px; }
         .pax-input { display: flex; gap: 8px; }
         .pax-del { flex: none; width: 52px; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
