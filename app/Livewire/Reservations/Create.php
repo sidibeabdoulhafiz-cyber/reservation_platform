@@ -84,6 +84,34 @@ class Create extends Component
         $this->assurerSelection();
     }
 
+    /*
+     * Sélections par boutons (wire:click) plutôt que par boutons radio masqués :
+     * sur iPhone, Safari ne transmettait pas toujours le changement d'arrêt, et le prix restait l'ancien.
+     */
+    public function choisirDepart(int $id): void
+    {
+        if ($this->departs->contains('id', $id) && (int) $this->depart_id !== $id) {
+            $this->depart_id = $id;
+            $this->updatedDepartId();
+        }
+    }
+
+    public function choisirArret(int $zoneId): void
+    {
+        if ($this->tarifs->contains('zone_id', $zoneId)) {
+            $this->zone_id = $zoneId;
+            $this->assurerSelection();
+        }
+    }
+
+    public function choisirCategorie(int $id): void
+    {
+        if ($this->typesBillets->contains('id', $id)) {
+            $this->type_billet_id = $id;
+            $this->assurerSelection();
+        }
+    }
+
     #[Computed]
     public function departs(): Collection
     {

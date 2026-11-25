@@ -230,7 +230,7 @@
         .btn-light:hover { background: rgba(255,255,255,.1); border-color: #fff; }
         .btn-wa { background: #25d366; color: #073b1f; }
         .btn-wa:hover { background: #1eb956; }
-        .amt { font-family: var(--mono); font-weight: 500; }
+        .amt { font-family: var(--mono); font-weight: 500; white-space: nowrap; }
         .linklike { background: none; border: 0; padding: 0; color: var(--brand); font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 
         /* ---------- Formulaires ---------- */
@@ -258,27 +258,29 @@
 
         /* Options sélectionnables */
         .opts { display: grid; gap: 10px; }
-        .opt { position: relative; display: block; }
-        .opt input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; margin: 0; z-index: 1; }
+        .opt { position: relative; display: block; width: 100%; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .opt > span { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1.5px solid var(--line); background: #fff; border-radius: 14px; padding: 14px 16px; min-height: 64px; transition: border-color .15s, background .15s; }
         .opt b { font-weight: 600; font-size: 1.05rem; display: block; }
         .opt small { color: var(--muted); display: block; }
         .opt:hover > span { border-color: #c3cdda; }
-        .opt input:checked + span { border-color: var(--brand); background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand); }
-        .opt input:focus-visible + span { outline: 2.5px solid var(--accent); outline-offset: 2px; }
-        .opt input:disabled + span { opacity: .5; }
+        .opt.on > span { border-color: var(--brand); background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand); }
+        .opt:focus-visible { outline: none; }
+        .opt:focus-visible > span { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+        .opt:disabled { cursor: not-allowed; }
+        .opt:disabled > span { opacity: .5; }
         .opt .price { font: 600 15px var(--body); white-space: nowrap; color: var(--brand); }
 
         /* Chips (départs, filtres) */
         .chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
         .chips::-webkit-scrollbar { display: none; }
-        .chip { position: relative; flex: none; }
-        .chip input { position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0; }
+        .chip { position: relative; flex: none; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .chip span { display: grid; gap: 2px; padding: 10px 16px; border: 1.5px solid var(--line); border-radius: 14px; background: #fff; min-width: 140px; transition: border-color .15s, background .15s; }
         .chip b { font-weight: 600; }
         .chip small { color: var(--muted); font-size: 13px; }
-        .chip input:checked + span { border-color: var(--brand); background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand); }
-        .chip input:focus-visible + span { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+        .chip:disabled { cursor: not-allowed; opacity: .55; }
+        .chip.on span { border-color: var(--brand); background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand); }
+        .chip:focus-visible { outline: none; }
+        .chip:focus-visible span { outline: 2.5px solid var(--accent); outline-offset: 2px; }
         .chip small.low { color: var(--err); font-weight: 600; }
         .pill-btn { font: 500 14.5px var(--body); padding: 9px 16px; min-height: 40px; border-radius: 99px; border: 1.5px solid var(--line); background: #fff; color: var(--fg); cursor: pointer; white-space: nowrap; transition: all .15s; }
         .pill-btn:hover { border-color: var(--brand); }
@@ -287,8 +289,7 @@
         /* Itinéraire (arrêts) */
         .route { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
         .stop { position: relative; }
-        .stop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0; z-index: 1; }
-        .stop .body { display: grid; grid-template-columns: 52px 20px 1fr auto; align-items: center; gap: 10px; padding: 13px 14px; border: 1.5px solid var(--line); border-radius: 14px; background: #fff; transition: border-color .15s, background .15s; }
+        .stop .body { width: 100%; font: inherit; color: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; display: grid; grid-template-columns: 52px 20px 1fr auto; align-items: center; gap: 10px; padding: 13px 14px; border: 1.5px solid var(--line); border-radius: 14px; background: #fff; transition: border-color .15s, background .15s; }
         .stop .time { font: 600 14.5px var(--body); color: var(--brand); }
         .stop .dot { width: 14px; height: 14px; border-radius: 50%; border: 3px solid #b7c3d3; background: #fff; justify-self: center; }
         .stop.principal .dot { border-color: var(--brand); }
@@ -297,9 +298,9 @@
         .stop .tag-main { display: inline-block; font: 600 11px var(--body); text-transform: uppercase; letter-spacing: .05em; color: var(--brand); background: var(--brand-soft); padding: 2px 8px; border-radius: 99px; margin-left: 6px; vertical-align: middle; }
         .stop .price { font: 600 15px var(--body); color: var(--fg); white-space: nowrap; }
         .stop:hover .body { border-color: #c3cdda; }
-        .stop input:checked + .body { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
-        .stop input:checked + .body .dot { border-color: var(--accent); background: var(--accent); }
-        .stop input:focus-visible + .body { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+        .stop.on .body { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+        .stop.on .body .dot { border-color: var(--accent); background: var(--accent); }
+        .stop .body:focus-visible { outline: 2.5px solid var(--accent); outline-offset: 2px; }
         .route-end { display: grid; grid-template-columns: 52px 20px 1fr; gap: 10px; align-items: center; padding: 8px 14px; color: var(--muted); font-size: 14.5px; }
         .route-end .ico { justify-self: center; color: var(--brand); }
 

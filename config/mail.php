@@ -91,12 +91,23 @@ return [
             'transport' => 'array',
         ],
 
+        // Boîte e-mail du domaine chez LWS (ex. contact@cotatrans.com) : 120 envois/heure, 1200/jour.
+        'lws' => [
+            'transport' => 'smtp',
+            'scheme' => env('LWS_MAIL_SCHEME', 'smtps'),
+            'host' => env('LWS_MAIL_HOST'),
+            'port' => env('LWS_MAIL_PORT', 465),
+            'username' => env('LWS_MAIL_USERNAME'),
+            'password' => env('LWS_MAIL_PASSWORD'),
+            'timeout' => 20,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+        ],
+
+        // MAIL_MAILER=failover : on essaie la boîte LWS, et si elle refuse (quota horaire atteint,
+        // panne), l'e-mail part automatiquement par Brevo. Ordre réglable avec MAIL_FAILOVER.
         'failover' => [
             'transport' => 'failover',
-            'mailers' => [
-                'smtp',
-                'log',
-            ],
+            'mailers' => array_values(array_filter(array_map('trim', explode(',', (string) env('MAIL_FAILOVER', 'lws,smtp'))))),
             'retry_after' => 60,
         ],
 

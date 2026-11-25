@@ -22,6 +22,16 @@ Compte environ 1 h pour la première fois.
 
 ---
 
+## Spécial LWS (hébergement mutualisé)
+
+- Le site est dans `~/htdocs` : on y clone le projet directement (`git clone … .`). Le fichier `.htaccess` à la racine envoie tout vers `public/` et force le HTTPS.
+- PHP : choisir la même version pour le site et le Terminal (8.4 ou 8.5).
+- Raccourci des images : **ne pas** utiliser `php artisan storage:link`, qui crée un chemin absolu que le serveur web ne voit pas. À la place :
+  `cd ~/htdocs/public && ln -s ../storage/app/public storage`
+- Commande `head` absente : utilisez `tail` ou `less`.
+- Cron : `cd /home/htdocs && /usr/base/opt/php8.5/bin/php artisan schedule:run >> /dev/null 2>&1`
+- E-mails : boîte `contact@` du domaine en SMTP (`mail.<domaine>`, port 465), avec Brevo en secours (`MAIL_MAILER=failover`).
+
 ## 1. Envoyer le code sur le serveur
 
 En SSH, dans le dossier prévu (par ex. `~/cotatrans`) :

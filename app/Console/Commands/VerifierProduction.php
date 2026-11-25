@@ -32,6 +32,9 @@ class VerifierProduction extends Command
         $this->check((bool) config('cotatrans.code_connexion'), 'Code de vérification par e-mail actif', 'Retire CODE_CONNEXION=false du .env');
 
         $mailer = (string) config('mail.default');
+        if ($mailer === 'failover') {
+            $this->check(filled(config('mail.mailers.lws.host')) && ! str_contains((string) config('mail.mailers.lws.host'), '<'), 'Boîte LWS configurée (LWS_MAIL_HOST)', 'Renseignez LWS_MAIL_* dans .env');
+        }
         $this->check(! in_array($mailer, ['log', 'array'], true), 'Envoi d’e-mails réel (MAIL_MAILER='.$mailer.')', 'Configure MAIL_MAILER (smtp ou brevo)');
         $from = (string) config('mail.from.address');
         $this->check($from !== '' && ! str_contains($from, 'example.com'), 'Adresse d’expédition ('.$from.')', 'Renseigne MAIL_FROM_ADDRESS');
@@ -42,13 +45,13 @@ class VerifierProduction extends Command
             $this->check(Schema::hasColumn('evenements', 'categorie'), 'Migrations à jour', 'Lance php artisan migrate --force');
             $this->check(User::where('role', 'admin')->where('actif', true)->exists(), 'Au moins un administrateur', 'Lance php artisan cotatrans:admin');
             $this->check(! User::where('email', 'like', '%@cotatrans.test')->exists(), 'Aucun compte de démonstration', 'Supprime les comptes @cotatrans.test');
-            $wave = (string) Setting::get('wave_link');
-            $this->check($wave !== '' && ! str_contains($wave, '/dev/payer'), 'Lien de paiement Wave configuré', 'Admin > Réglages > Lien Wave');
+            $wave = \App\Support\Wave::lienDeBase();
+            $this->check($wave !== '' && ! str_contains($wave, '/dev/payer'), 'Lien de paiement Wave configuré'.($wave !== '' ? ' ('.$wave.')' : ''), 'WAVE_LINK dans .env ou Admin > Réglages > Paiement');
         } catch (\Throwable $e) {
             $this->check(false, 'Base de données joignable', $e->getMessage());
         }
 
-        $this->check(is_link(public_path('storage')) || is_dir(public_path('storage')), 'Lien public/storage (affiches)', 'Lance php artisan storage:link');
+        $this->check(is_dir(public_path('storage')), 'Lien public/storage (affiches)', 'cd public && ln -s ../storage/app/public storage');
         $this->check(is_writable(storage_path('logs')) && is_writable(storage_path('framework')), 'Dossier storage accessible en écriture', 'Donne les droits d’écriture à storage/ et bootstrap/cache/');
         $this->check(! file_exists(public_path('hot')), 'Pas de serveur de dev actif (public/hot)', 'Supprime public/hot');
 

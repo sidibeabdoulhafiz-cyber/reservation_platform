@@ -72,4 +72,27 @@ class EmailsEtMesReservationsTest extends TestCase
             ->assertDontSee('amount=100', false)
             ->assertSee('Payer avec Wave');
     }
+
+    public function test_changer_d_arret_change_le_prix(): void
+    {
+        Setting::set('site_ouvert', '1');
+        $z1 = \App\Models\Zone::create(['nom' => 'Yopougon', 'prix_defaut' => 2500, 'actif' => true]);
+        $z2 = \App\Models\Zone::create(['nom' => 'Cocody', 'prix_defaut' => 3000, 'actif' => true]);
+        $v = \App\Models\Vehicule::create(['nom' => 'Car', 'immatriculation' => 'S-1', 'capacite' => 30, 'actif' => true]);
+        $evt = \App\Models\Evenement::create(['titre' => 'Match', 'slug' => 'match', 'lieu' => 'Stade', 'ville' => 'Abidjan', 'debut_at' => now()->addDays(6), 'statut' => 'publie']);
+        $d = \App\Models\Depart::create(['evenement_id' => $evt->id, 'vehicule_id' => $v->id, 'depart_at' => now()->addDays(6), 'places_total' => 30, 'places_reservees' => 0, 'max_par_commande' => 8, 'statut' => 'ouvert']);
+        $d->tarifs()->create(['zone_id' => $z1->id, 'ordre' => 1, 'principal' => true, 'prix' => 2500, 'actif' => true]);
+        $d->tarifs()->create(['zone_id' => $z2->id, 'ordre' => 2, 'principal' => false, 'prix' => 3000, 'actif' => true]);
+
+        Livewire::test(\App\Livewire\Reservations\Create::class, ['evenement' => $evt])
+            ->assertSet('zone_id', $z1->id)
+            ->assertSee('wire:click="choisirArret('.$z2->id.')"', false)
+            ->call('choisirArret', $z2->id)
+            ->assertSet('zone_id', $z2->id)
+            ->assertSee('aria-checked="true"', false)
+            ->call('increment')
+            ->assertSee('6 000 F')
+            ->call('choisirArret', 999999)
+            ->assertSet('zone_id', $z2->id);
+    }
 }

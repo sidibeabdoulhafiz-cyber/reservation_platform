@@ -74,16 +74,16 @@
                     @if ($this->departs->count() > 1)
                         <fieldset>
                             <legend><span class="num">{{ $n++ }}</span> Choisissez votre départ</legend>
-                            <div class="chips">
+                            <div class="chips" role="radiogroup" aria-label="Départ">
                                 @foreach ($this->departs as $d)
-                                    @php $reste = $d->placesRestantes(); @endphp
-                                    <label class="chip" wire:key="dep-{{ $d->id }}">
-                                        <input type="radio" name="depart" wire:model.live="depart_id" value="{{ $d->id }}" @disabled($reste === 0)>
+                                    @php $reste = $d->placesRestantes(); $choisi = (int) $depart_id === $d->id; @endphp
+                                    <button type="button" class="chip {{ $choisi ? 'on' : '' }}" wire:key="dep-{{ $d->id }}" role="radio" aria-checked="{{ $choisi ? 'true' : 'false' }}"
+                                            wire:click="choisirDepart({{ $d->id }})" x-on:click="$el.parentElement.querySelectorAll('.chip').forEach(e => e.classList.remove('on')); $el.classList.add('on')" @disabled($reste === 0)>
                                         <span>
                                             <b>{{ $d->depart_at->locale('fr')->translatedFormat('D j M · H\hi') }}</b>
                                             <small @class(['low' => $reste <= 3])>{{ $reste === 0 ? 'Complet' : $reste.' place'.($reste > 1 ? 's' : '').' restante'.($reste > 1 ? 's' : '') }}</small>
                                         </span>
-                                    </label>
+                                    </button>
                                 @endforeach
                             </div>
                         </fieldset>
@@ -92,11 +92,14 @@
                     <fieldset>
                         <legend><span class="num">{{ $n++ }}</span> Où montez-vous ?</legend>
                         <p class="hint step-hint">Le car passe par ces arrêts, dans cet ordre. Choisissez le plus proche de chez vous.</p>
-                        <ol class="route" aria-label="Itinéraire">
+                        <ol class="route" role="radiogroup" aria-label="Itinéraire">
                             @foreach ($this->tarifs as $t)
-                                <li class="stop {{ $t->principal ? 'principal' : '' }}" wire:key="z-{{ $t->id }}">
-                                    <input type="radio" name="zone" wire:model.live="zone_id" value="{{ $t->zone_id }}" aria-label="{{ $t->zone->nom }}, passage vers {{ $t->heure() ?? 'heure à confirmer' }}, {{ number_format($t->prix, 0, ',', ' ') }} francs">
-                                    <div class="body">
+                                @php $choisi = (int) $zone_id === $t->zone_id; @endphp
+                                <li class="stop {{ $t->principal ? 'principal' : '' }} {{ $choisi ? 'on' : '' }}" wire:key="z-{{ $t->id }}">
+                                    <button type="button" class="body" role="radio" aria-checked="{{ $choisi ? 'true' : 'false' }}"
+                                            aria-label="{{ $t->zone->nom }}, passage vers {{ $t->heure() ?? 'heure à confirmer' }}, {{ number_format($t->prix, 0, ',', ' ') }} francs"
+                                            wire:click="choisirArret({{ $t->zone_id }})"
+                                            x-on:click="$el.closest('ol').querySelectorAll('.stop').forEach(e => e.classList.remove('on')); $el.parentElement.classList.add('on')">
                                         <span class="time">{{ $t->heure() ?? '—' }}</span>
                                         <span class="dot" aria-hidden="true"></span>
                                         <span class="name">
@@ -104,7 +107,7 @@
                                             @if ($t->point_rdv)<small>{{ $t->point_rdv }}</small>@endif
                                         </span>
                                         <span class="price">{{ number_format($t->prix, 0, ',', ' ') }} F</span>
-                                    </div>
+                                    </button>
                                 </li>
                             @endforeach
                         </ol>
@@ -113,11 +116,11 @@
                 @else
                     <fieldset>
                         <legend><span class="num">{{ $n++ }}</span> Catégorie de billet</legend>
-                        <div class="opts">
+                        <div class="opts" role="radiogroup" aria-label="Catégorie de billet">
                             @foreach ($this->typesBillets as $cat)
-                                @php $reste = $cat->placesRestantes(); @endphp
-                                <label class="opt" wire:key="cat-{{ $cat->id }}">
-                                    <input type="radio" name="categorie" wire:model.live="type_billet_id" value="{{ $cat->id }}" @disabled($reste === 0)>
+                                @php $reste = $cat->placesRestantes(); $choisi = (int) $type_billet_id === $cat->id; @endphp
+                                <button type="button" class="opt {{ $choisi ? 'on' : '' }}" wire:key="cat-{{ $cat->id }}" role="radio" aria-checked="{{ $choisi ? 'true' : 'false' }}"
+                                        wire:click="choisirCategorie({{ $cat->id }})" x-on:click="$el.parentElement.querySelectorAll('.opt').forEach(e => e.classList.remove('on')); $el.classList.add('on')" @disabled($reste === 0)>
                                     <span>
                                         <span>
                                             <b>{{ $cat->nom }}</b>
@@ -125,7 +128,7 @@
                                         </span>
                                         <span class="price">{{ number_format($cat->prix, 0, ',', ' ') }} F</span>
                                     </span>
-                                </label>
+                                </button>
                             @endforeach
                         </div>
                     </fieldset>
